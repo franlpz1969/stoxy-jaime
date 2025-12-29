@@ -19,5 +19,4 @@ data/*.sqlite
 # Additional gcloud specific
 .git
 .gitignore
-Dockerfile
-README.md
+# Dockerfile <-- REMOVED from ignore

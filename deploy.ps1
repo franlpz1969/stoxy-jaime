@@ -48,13 +48,10 @@ Write-Host "--- Creating Artifact Repository (if not exists) ---" -ForegroundCol
 # Suppress error if already exists
 & $GCLOUD artifacts repositories create $REPO_NAME --repository-format=docker --location=$REGION 2>$null
 
-Write-Host "--- Building & Pushing Image ---" -ForegroundColor Cyan
-if ($API_KEY) {
-    & $GCLOUD builds submit --tag "$REGION-docker.pkg.dev/$ProjectId/$REPO_NAME/$IMAGE_NAME`:`latest" --build-arg GEMINI_API_KEY=$API_KEY .
-} else {
-    Write-Host "WARNING: No API key found, building without it" -ForegroundColor Yellow
-    & $GCLOUD builds submit --tag "$REGION-docker.pkg.dev/$ProjectId/$REPO_NAME/$IMAGE_NAME`:`latest" .
-}
+Write-Host "--- Building & Pushing Image via Cloud Build ---" -ForegroundColor Cyan
+& $GCLOUD builds submit . `
+  --config cloudbuild.yaml `
+  --substitutions "_PROJECT_ID=$ProjectId,_REGION=$REGION,_REPO_NAME=$REPO_NAME,_IMAGE_NAME=$IMAGE_NAME,_GEMINI_API_KEY=$API_KEY"
 
 Write-Host "--- Creating Data Bucket (if not exists) ---" -ForegroundColor Cyan
 & $GCLOUD storage buckets create gs://$BUCKET_NAME --location=$REGION 2>$null
@@ -64,7 +61,8 @@ Write-Host "--- Deploying to Cloud Run ---" -ForegroundColor Cyan
   --image "$REGION-docker.pkg.dev/$ProjectId/$REPO_NAME/$IMAGE_NAME`:`latest" `
   --execution-environment gen2 `
   --allow-unauthenticated `
-  --clear-volume-mounts `
+  --add-volume "name=db-volume,type=cloud-storage,bucket=$BUCKET_NAME" `
+  --add-volume-mount "volume=db-volume,mount-path=/app/data" `
   --timeout 300
 
 Write-Host "--- Deployment Complete! ---" -ForegroundColor Green
