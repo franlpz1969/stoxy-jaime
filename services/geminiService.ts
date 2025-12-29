@@ -69,42 +69,49 @@ CASOS HISTÓRICOS DE ÉXITO (Manual de Justificaciones):
 - Disney (DIS) - Fecha: 04/04/2025. Contexto: Foco en rentabilidad streaming. Oportunidad: Recuperación de valor de marca (Turnaround).
 `;
 
+const ALLOWED_COMPANIES = [
+  "Alphabet (GOOGL)", "LVMH (MC.PA)", "Georgia Capital (CGEO)", "Novo Nordisk (NOVO-B.CO)",
+  "ASML", "Starbucks (SBUX)", "Coca Cola (KO)", "PepsiCo (PEP)", "Mondelez (MDLZ)",
+  "Johnson & Johnson (JNJ)", "AMD", "Adobe (ADBE)", "Target (TGT)", "General Mills (GIS)",
+  "Waste Management (WM)", "Gold (WisdomTree)", "Tesla (TSLA)", "Lockheed Martin (LMT)",
+  "Amazon (AMZN)", "British American Tobacco (BTI)", "Visa (V)", "Petrobras (PBR)",
+  "Microsoft (MSFT)", "Canadian National Railway (CNI)", "Philip Morris (PM)",
+  "Paypal (PYPL)", "Booking (BKNG)", "VICI Properties (VICI)", "Procter & Gamble (PG)",
+  "Meta (META)", "Mastercard (MA)"
+];
+
 export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecommendation[]> => {
   try {
     const prompt = `
-      Actúa como un Analista Senior de Valor. Tu objetivo es encontrar "Oportunidades de Compra" basadas en el "Radar de Valoración" adjunto.
-      
-      DATOS DEL RADAR DE VALORACIÓN:
+      Actúa como un Analista Senior de Valor. Tu objetivo es encontrar "Oportunidades de Compra" hoy.
+
+      ESTRATEGIA DE BÚSQUEDA (Basada en AlexDitoInvesting y AcademiaDeInversoresUSA):
+      Identifica de 1 a 4 acciones que sean buenos candidatos basándote en:
+      - Valoración: P/E < media sector, PEG < 1.0.
+      - Estabilidad: Debt-to-Equity < 1.0, ROE > 10%.
+      - Crecimiento: BPA positivo, crecimiento futuro superior a competidores.
+      Busca activamente menciones recientes de estos canales (Broadcom, Costco, Lululemon, Oracle, etc.) pero FILTRRA ESTRICTAMENTE.
+
+      REGLA DE ORO (Filtro de Empresas Admitidas):
+      SOLO puedes recomendar empresas que estén en esta lista:
+      ${ALLOWED_COMPANIES.join(", ")}
+      Si una empresa NO está en la lista anterior, NO la recomiendes.
+
+      DATOS DEL RADAR DE VALORACIÓN (Referencia):
       ${VALUATION_RADAR_DATA}
-
-      UNIVERSO DE INVERSIÓN:
-      - Fondos Indexados: Vanguard Global Stock Index.
-      - Cripto: BTC.
-      - Acciones Globales: Cualquier acción de alta calidad.
-
-      INSTRUCCIONES DE SELECCIÓN Y RADAR:
-      1. Selecciona de 2 a 4 activos interesantes hoy.
-      2. REVISIÓN DE RADAR: Si el activo está en el RADAR OSCARYAN, incluye sus datos en el campo 'valuationRadar'.
-      3. Si el activo NO está en el radar, deja 'valuationRadar' vacío.
-      4. No restrinjas las recomendaciones solo a las del radar, pero úsalo como referencia de valor.
-
-      REQUISITOS DEL ANÁLISIS:
-      1. ANÁLISIS FUNDAMENTAL: Detalla Moat y métricas del radar.
-      2. ANÁLISIS TÉCNICO: Explica el soporte respecto a la MM1000.
-      3. TENDENCIA DEL SECTOR: Contexto.
-
-      ENTREGABLES (JSON):
-      - ticker, companyName, riskLevel, suggestedBuyPrice, targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
 
       DETERMINACIÓN DE historicalMatch:
       - Compara la situación actual de cada empresa con estos CASOS HISTÓRICOS:
       ${HISTORICAL_JUSTIFICATIONS}
       - Si encuentras una analogía clara, completa 'historicalMatch' con:
         - matchedCompany: Nombre de la empresa histórica.
-        - matchedDate: La FECHA exacta que aparece en el registro histórico (ej: "03/01/2025"). CRÍTICO: Debe ser la fecha literal del archivo.
+        - matchedDate: Fecha literal del registro histórico (ej: "03/01/2025").
         - contextSimilarity: Por qué el momento actual se parece a aquel momento histórico.
-        - justification: Cuál es la oportunidad detectada que justifica la compra hoy (basándote en la lógica del caso histórico).
+        - justification: La oportunidad detectada basada en la lógica del caso histórico.
       - Si no hay match claro, deja 'historicalMatch' null.
+
+      ENTREGABLES (JSON):
+      - ticker, companyName, riskLevel, suggestedBuyPrice, targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
     `;
 
     console.log("Fetching recommendations with Radar context (Flash)...");
