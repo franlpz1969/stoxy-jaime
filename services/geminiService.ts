@@ -132,7 +132,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       - Si no hay match claro, deja 'historicalMatch' null.
 
       ENTREGABLES (JSON):
-      - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
+      - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), asOfDate (fecha de HOY dd/mm/yyyy), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
     `;
 
     console.log("Fetching live recommendations with Gemini 2.0...");
