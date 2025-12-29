@@ -100,9 +100,10 @@ const ALLOWED_COMPANIES = [
 export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecommendation[]> => {
   try {
     const radarData = await fetchValuationRadar();
+    const today = new Date().toLocaleDateString('es-ES');
     const prompt = `
-      Actúa como un Analista Senior de Valor. Tu objetivo es encontrar "Oportunidades de Compra" hoy.
-
+      Actúa como un Analista Senior de Valor. Fecha de hoy: ${today}. Tu objetivo es encontrar "Oportunidades de Compra" hoy.
+      
       ESTRATEGIA DE BÚSQUEDA (Basada en AlexDitoInvesting y AcademiaDeInversoresUSA):
       Identifica ENTRE 1 y 4 acciones (MÁXIMO 4) que sean las mejores oportunidades de compra hoy.
       ORDENAMIENTO OBLIGATORIO: Ordena las recomendaciones de MAYOR a MENOR grado de convicción (la mejor oportunidad primero).
@@ -132,7 +133,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       - Si no hay match claro, deja 'historicalMatch' null.
 
       ENTREGABLES (JSON):
-      - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), asOfDate (fecha de HOY dd/mm/yyyy), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
+      - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), asOfDate (Usa EXACTAMENTE esta fecha: ${today}), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
     `;
 
     console.log("Fetching live recommendations with Gemini 2.0...");

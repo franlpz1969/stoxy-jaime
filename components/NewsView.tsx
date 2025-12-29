@@ -209,9 +209,7 @@ const NewsView = () => {
                                                 <Target size={20} />
                                                 ${rec.suggestedBuyPrice.toFixed(2)}
                                             </div>
-                                            <div className="text-zinc-600 text-[10px] font-black uppercase mt-1 tracking-widest">
-                                                Precio Actual ({rec.asOfDate})
-                                            </div>
+                                            <div className="text-zinc-600 text-[10px] font-black uppercase mt-1 tracking-widest">Precio Actual</div>
                                         </div>
                                     </div>
 
