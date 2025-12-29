@@ -189,7 +189,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       {
         ticker: "DGE",
         companyName: "Diageo plc",
-        suggestedBuyPrice: 2400,
+        suggestedBuyPrice: 2345.50,
         targetPrice: 3000,
         asOfDate: new Date().toISOString().split('T')[0],
         riskLevel: "Low",
@@ -209,7 +209,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       {
         ticker: "UNH",
         companyName: "UnitedHealth Group",
-        suggestedBuyPrice: 480,
+        suggestedBuyPrice: 512.40,
         targetPrice: 600,
         asOfDate: new Date().toISOString().split('T')[0],
         riskLevel: "Low",
