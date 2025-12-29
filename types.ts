@@ -86,6 +86,16 @@ export interface InvestmentRecommendation {
   technicalAnalysis: string;
   sectorTrends: string;
   companyCatalysts: string;
+  valuationRadar?: {
+    marginMM1000: string;
+    peStatus: string;
+  };
+  historicalMatch?: {
+    matchedCompany: string;
+    matchedDate: string;
+    contextSimilarity: string;
+    justification: string;
+  };
   sourceUrls?: string[];
 }
 
