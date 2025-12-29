@@ -111,7 +111,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       - Si no hay match claro, deja 'historicalMatch' null.
 
       ENTREGABLES (JSON):
-      - ticker, companyName, riskLevel, suggestedBuyPrice, targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
+      - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
     `;
 
     console.log("Fetching recommendations with Radar context (Flash)...");
@@ -223,7 +223,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       {
         ticker: "TGT",
         companyName: "Target Corporation",
-        suggestedBuyPrice: 140,
+        suggestedBuyPrice: 98.10,
         targetPrice: 180,
         asOfDate: new Date().toISOString().split('T')[0],
         riskLevel: "Medium",
