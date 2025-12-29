@@ -187,40 +187,6 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
     console.error("Critical error in fetchInvestmentRecommendations, using full fallback list:", error);
     return [
       {
-        ticker: "DGE",
-        companyName: "Diageo plc",
-        suggestedBuyPrice: 2345.50,
-        targetPrice: 3000,
-        asOfDate: new Date().toISOString().split('T')[0],
-        riskLevel: "Low",
-        metrics: { pe: "20.4", peg: "1.2", roe: "30%", debtToEquity: "1.5" },
-        fundamentalThesis: "Líder mundial con margen MM1000 del +44.75%.",
-        technicalAnalysis: "Soporte histórico mayor.",
-        sectorTrends: "Consumo defensivo estable.",
-        companyCatalysts: "Recuperación de márgenes.",
-        valuationRadar: { marginMM1000: "+44.75%", peStatus: "Undervalued (20 vs 25)" },
-        historicalMatch: {
-          matchedCompany: "UPS",
-          matchedDate: "03/01/2025",
-          contextSimilarity: "Líder de sector castigado con dividendos altos.",
-          justification: "Se compra un líder con descuento histórico esperando reversión a la media."
-        }
-      },
-      {
-        ticker: "UNH",
-        companyName: "UnitedHealth Group",
-        suggestedBuyPrice: 512.40,
-        targetPrice: 600,
-        asOfDate: new Date().toISOString().split('T')[0],
-        riskLevel: "Low",
-        metrics: { pe: "17.2", peg: "1.1", roe: "25%", debtToEquity: "0.6" },
-        fundamentalThesis: "Líder en salud con margen MM1000 del +31.75%.",
-        technicalAnalysis: "Rebote en zona de valor.",
-        sectorTrends: "Sector salud resiliente.",
-        companyCatalysts: "Crecimiento continuo.",
-        valuationRadar: { marginMM1000: "+31.75%", peStatus: "Undervalued (17 vs 23.5)" }
-      },
-      {
         ticker: "TGT",
         companyName: "Target Corporation",
         suggestedBuyPrice: 98.10,
@@ -228,16 +194,55 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
         asOfDate: new Date().toISOString().split('T')[0],
         riskLevel: "Medium",
         metrics: { pe: "11.9", peg: "0.9", roe: "22%", debtToEquity: "1.2" },
-        fundamentalThesis: "Margen MM1000 del +30.44% con valoración atractiva.",
-        technicalAnalysis: "Soporte en mínimos plurianuales.",
-        sectorTrends: "Consumo discrecional.",
+        fundamentalThesis: "Empresa en la lista admitida con excelente valoración fundamental y técnica.",
+        technicalAnalysis: "Soporte en mínimos de 52 semanas.",
+        sectorTrends: "Consumo discrecional en recuperación.",
         companyCatalysts: "Mejora operativa.",
         valuationRadar: { marginMM1000: "+30.44%", peStatus: "Undervalued (11.9 vs 19)" },
         historicalMatch: {
           matchedCompany: "Adobe",
           matchedDate: "03/01/2025",
           contextSimilarity: "Oportunidad de entrada 'barata' por pesimismo temporal.",
-          justification: "Aprovechamiento de la caída de precio por expectativas no cumplidas en una empresa con fundamentales sólidos."
+          justification: "Aprovechamiento de la caída de precio por expectativas no cumplidas."
+        }
+      },
+      {
+        ticker: "PEP",
+        companyName: "PepsiCo Inc",
+        suggestedBuyPrice: 165.40,
+        targetPrice: 195,
+        asOfDate: new Date().toISOString().split('T')[0],
+        riskLevel: "Low",
+        metrics: { pe: "21.5", peg: "2.1", roe: "45%", debtToEquity: "1.8" },
+        fundamentalThesis: "Rey del dividendo con poder de marca inigualable.",
+        technicalAnalysis: "En zona de soporte MM1000.",
+        sectorTrends: "Defensivo y estable.",
+        companyCatalysts: "Estabilización de costes.",
+        valuationRadar: { marginMM1000: "+12.61%", peStatus: "Correct Value" },
+        historicalMatch: {
+          matchedCompany: "PepsiCo",
+          matchedDate: "08/01/2025",
+          contextSimilarity: "Miedo injustificado a fármacos GLP-1.",
+          justification: "Compra de un negocio excelente a precio justo aprovechando el miedo del mercado."
+        }
+      },
+      {
+        ticker: "MSFT",
+        companyName: "Microsoft Corp",
+        suggestedBuyPrice: 415.20,
+        targetPrice: 500,
+        asOfDate: new Date().toISOString().split('T')[0],
+        riskLevel: "Low",
+        metrics: { pe: "34.5", peg: "1.8", roe: "38%", debtToEquity: "0.4" },
+        fundamentalThesis: "Líder indiscutible en IA y Cloud de alta calidad.",
+        technicalAnalysis: "Consolidación en máximos.",
+        sectorTrends: "Tecnología de crecimiento.",
+        companyCatalysts: "Expansión de Copilot.",
+        historicalMatch: {
+          matchedCompany: "Microsoft",
+          matchedDate: "31/01/2025",
+          contextSimilarity: "Mejor forma de jugar la IA a través de software.",
+          justification: "Posición estructural de la cartera por su balance y liderazgo."
         }
       }
     ];
