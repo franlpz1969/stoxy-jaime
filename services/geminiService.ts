@@ -30,30 +30,47 @@ const fetchYahoo = async (url: string) => {
   }
 };
 
-const VALUATION_RADAR_DATA = `
-SISTEMA DE VALORACIÓN (Radar OscarYan 2.0):
-- Margen MM1000: Diferencia entre cotización y media de 1000 sesiones. > 0% = Descuento.
-- PER vs Histórico: Comparación de múltiplos.
+const RADAR_SHEET_URL = "https://docs.google.com/spreadsheets/d/1Wf4gbZbDZDLMxXvNAVjOAuuxI1hulpzi/export?format=csv";
 
-EMPRESAS INFRAVALORADAS (MM1000 > 0%):
-1. Diageo (DGE): Margen +44.75%, PER 20.44 (vs 25 hist). Muy infravalorada.
-2. Nike (NKE): Margen +35.33%, PER 35.7 (vs 34 hist). Descuento técnico, PER justo.
-3. UnitedHealth (UNH): Margen +31.75%, PER 17.19 (vs 23.5 hist). Muy infravalorada.
-4. Target (TGT): Margen +30.44%, PER 11.9 (vs 19 hist). Muy infravalorada.
-5. General Mills (GIS): Margen +30.28%, PER 10.09 (vs 16 hist). Muy infravalorada.
-6. Pfizer (PFE): Margen +26.76%, PER 14.58 (vs 14 hist). En precio, descuento técnico.
-7. Zoetis (ZTS): Margen +24.77%, PER 21.28 (vs 39 hist). Muy infravalorada.
-8. Comcast (CMCSA): Margen +22.69%, PER 4.95 (vs 18 hist). Infravaloración extrema.
-9. Mondelez (MDLZ): Margen +17.42%, PER 20.47 (vs 22 hist). Atractiva.
-10. PepsiCo (PEP): Margen +12.61%, PER 27.45 (vs 26 hist). Descuento técnico.
-11. LVMH (MC.PA): Margen +6.15%, PER 28.78 (vs 28 hist). En precio.
-12. Starbucks (SBUX): Margen +6.93%, PER 52.46 (vs 30 hist). Cara por beneficios, descuento técnico.
-13. Canadian National (CNI): Margen +12.26%, PER 18.46 (vs 21 hist). Atractiva.
-14. Alexandria (ARE): Margen +58.29%. Descuento masivo por sector REIT.
+async function fetchValuationRadar(): Promise<string> {
+  try {
+    console.log("Fetching Radar data from Google Sheets...");
+    const res = await fetch(RADAR_SHEET_URL);
+    if (!res.ok) throw new Error("Failed to fetch Radar CSV");
 
-EMPRESAS SOBREVALORADAS (Evitar):
-- Microsoft (MSFT), Alphabet (GOOGL), Apple (AAPL), Amazon (AMZN), Meta (META), American Express (AXP). Todas cotizan muy por encima de su MM1000 (márgenes negativos).
-`;
+    const csvText = await res.text();
+    const rows = csvText.split('\n').map(row => row.split(','));
+
+    // Asumimos que la primera fila son cabeceras y buscamos índices relevantes o usamos fijos si la estructura es estable.
+    // Estructura vista: Ticker(0), ..., Empresa(3), ..., Cotización(5), ..., Margen MM1000(7), PER(8), PER Historico(9)
+    // Limpiamos comillas que a veces trae el CSV en números
+
+    const clean = (val: string) => val?.replace(/['"]+/g, '').trim();
+
+    let formattedData = "DATOS EN TIEMPO REAL DEL RADAR (Google Sheets):\n";
+
+    // Empezamos en 1 para saltar cabecera
+    for (let i = 1; i < rows.length; i++) {
+      const col = rows[i];
+      if (col.length < 5) continue;
+
+      const ticker = clean(col[0]);
+      const empresa = clean(col[3]);
+      const precio = clean(col[5]);
+      const margen = clean(col[7]);
+      const per = clean(col[8]);
+      const perHist = clean(col[9]);
+
+      if (ticker && empresa) {
+        formattedData += `- ${empresa} (${ticker}): Precio ${precio}, Margen MM1000 ${margen}, PER ${per} (vs Histórico ${perHist})\n`;
+      }
+    }
+    return formattedData;
+  } catch (error) {
+    console.error("Error fetching Radar Sheet:", error);
+    return "No se pudieron cargar los datos del Radar. Usa solo análisis fundamental general.";
+  }
+}
 
 const HISTORICAL_JUSTIFICATIONS = `
 CASOS HISTÓRICOS DE ÉXITO (Manual de Justificaciones):
@@ -82,6 +99,7 @@ const ALLOWED_COMPANIES = [
 
 export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecommendation[]> => {
   try {
+    const radarData = await fetchValuationRadar();
     const prompt = `
       Actúa como un Analista Senior de Valor. Tu objetivo es encontrar "Oportunidades de Compra" hoy.
 
@@ -97,8 +115,8 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       ${ALLOWED_COMPANIES.join(", ")}
       Si una empresa NO está en la lista anterior, NO la recomiendes.
 
-      DATOS DEL RADAR DE VALORACIÓN (Referencia):
-      ${VALUATION_RADAR_DATA}
+      DATOS DEL RADAR DE VALORACIÓN (Referencia en Vivo):
+      ${radarData}
 
       DETERMINACIÓN DE historicalMatch:
       - Compara la situación actual de cada empresa con estos CASOS HISTÓRICOS:
@@ -114,9 +132,9 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       - ticker, companyName, riskLevel, suggestedBuyPrice (este es el PRECIO ACTUAL de mercado), targetPrice, metrics, fundamentalThesis, technicalAnalysis, sectorTrends, companyCatalysts, valuationRadar, historicalMatch.
     `;
 
-    console.log("Fetching recommendations with Radar context (Flash)...");
+    console.log("Fetching live recommendations with Gemini 2.0...");
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "models/gemini-2.0-flash-exp",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
