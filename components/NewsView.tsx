@@ -1,0 +1,300 @@
+
+import React, { useState, useEffect } from 'react';
+import { Newspaper, ExternalLink, Lightbulb, TrendingUp, Loader2, Sparkles, Target, Calendar, AlertCircle, BarChart3, Zap, Globe, ShieldCheck, Layers, ArrowUpRight } from 'lucide-react';
+import { InvestmentRecommendation } from '../types';
+import { fetchInvestmentRecommendations } from '../services/geminiService';
+
+const NewsView = () => {
+  const [activeSection, setActiveSection] = useState<'news' | 'recommendations'>('news');
+  const [recommendations, setRecommendations] = useState<InvestmentRecommendation[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+
+  useEffect(() => {
+      if (activeSection === 'recommendations' && recommendations.length === 0) {
+          loadRecommendations();
+      }
+  }, [activeSection]);
+
+  const loadRecommendations = async () => {
+      setLoadingRecs(true);
+      const data = await fetchInvestmentRecommendations();
+      setRecommendations(data);
+      setLoadingRecs(false);
+  };
+
+  const news = [
+    {
+      source: 'Bloomberg',
+      time: '2h ago',
+      title: 'Fed Signals One More Rate Hike Before Pausing Cycle',
+      snippet: 'Federal Reserve officials suggested they are leaning toward one final interest-rate increase in May...',
+      tag: 'Macro'
+    },
+    {
+      source: 'TechCrunch',
+      time: '4h ago',
+      title: 'Apple Announces New AI Integration for iPhone 16',
+      snippet: 'The tech giant revealed its long-awaited artificial intelligence features during the annual WWDC keynote...',
+      tag: 'Tech'
+    },
+    {
+      source: 'CNBC',
+      time: '5h ago',
+      title: 'Oil Prices Surge Amid Geopolitical Tensions in Middle East',
+      snippet: 'Crude futures jumped over 3% on Monday morning as traders reacted to the latest developments...',
+      tag: 'Energy'
+    },
+    {
+      source: 'Reuters',
+      time: '8h ago',
+      title: 'Bitcoin Reclaims $68k Level as ETF Inflows Accelerate',
+      snippet: 'Cryptocurrency markets saw a broad rally today led by Bitcoin, driven by institutional demand...',
+      tag: 'Crypto'
+    }
+  ];
+
+  const getRiskColor = (level: string) => {
+    switch (level) {
+        case 'Low': return 'text-green-400 bg-green-500/10 border-green-500/20';
+        case 'Medium': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+        case 'High': return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+        default: return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
+    }
+  };
+
+  return (
+    <div className="p-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-screen">
+      
+      {/* Header & Toggle Switch */}
+      <div className="flex flex-col gap-4 mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold tracking-tight">Intelligence</h1>
+          </div>
+          
+          <div className="bg-zinc-900/50 p-1 rounded-xl border border-zinc-800 flex relative">
+               <button
+                  onClick={() => setActiveSection('news')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                      activeSection === 'news' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/50' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+               >
+                  Market News
+               </button>
+               <button
+                  onClick={() => setActiveSection('recommendations')}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${
+                      activeSection === 'recommendations' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/50' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+               >
+                  Oportunidades
+               </button>
+          </div>
+      </div>
+
+      {/* Content: News Tab */}
+      {activeSection === 'news' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {news.map((item, i) => (
+            <div key={i} className="bg-[#151517] border border-zinc-800 rounded-2xl p-5 hover:bg-zinc-900 transition-colors cursor-pointer group">
+                <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                        <span className="text-blue-500 font-bold text-xs uppercase tracking-wide">{item.source}</span>
+                        <span className="text-zinc-600 text-xs">• {item.time}</span>
+                    </div>
+                    <div className="bg-zinc-800 text-zinc-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                        {item.tag}
+                    </div>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2 leading-snug group-hover:text-blue-400 transition-colors">
+                    {item.title}
+                </h3>
+                <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
+                    {item.snippet}
+                </p>
+                <div className="mt-4 flex items-center text-zinc-600 text-xs font-medium group-hover:text-zinc-400">
+                    Read full story <ExternalLink size={12} className="ml-1" />
+                </div>
+            </div>
+            ))}
+        </div>
+      )}
+
+      {/* Content: Recommendations Tab */}
+      {activeSection === 'recommendations' && (
+        <div className="space-y-6 animate-in fade-in duration-500">
+            
+            {/* Legend / Source Info */}
+            <div className="bg-gradient-to-r from-green-600/10 to-blue-600/10 border border-green-500/20 rounded-3xl p-6 flex items-center gap-5 shadow-lg">
+                <div className="w-12 h-12 rounded-2xl bg-green-600/20 flex items-center justify-center text-green-400 shrink-0">
+                    <Target size={24} />
+                </div>
+                <div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">Buy Now Analysis</h4>
+                    <p className="text-zinc-500 text-xs leading-tight mt-1">Filtrando activos infravalorados y puntos de entrada tácticos inmediatos.</p>
+                </div>
+            </div>
+
+            {loadingRecs ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-6">
+                    <div className="relative">
+                        <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-pulse"></div>
+                        <Loader2 className="absolute inset-0 m-auto animate-spin text-blue-500" size={32} />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-white font-black text-lg">Buscando asimetrías de valor...</p>
+                        <p className="text-zinc-500 text-xs mt-1">Escaneando fundamentales y soportes técnicos</p>
+                    </div>
+                </div>
+            ) : recommendations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
+                    <div className="w-20 h-20 bg-zinc-900/50 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-lg">
+                        <Lightbulb size={32} className="opacity-40" />
+                    </div>
+                    <h3 className="font-bold text-xl text-zinc-400 mb-2">Evaluando Activos</h3>
+                    <p className="text-sm text-center max-w-xs text-zinc-600 leading-relaxed mb-6">
+                        No se han encontrado oportunidades con margen de seguridad suficiente en este momento.
+                    </p>
+                    <button onClick={loadRecommendations} className="bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-zinc-700 shadow-xl">Reintentar Escaneo</button>
+                </div>
+            ) : (
+                <div className="space-y-8 pb-20">
+                    {recommendations.map((rec, i) => (
+                        <div key={i} className="bg-[#121214] border border-zinc-800 rounded-[2.5rem] p-8 hover:border-green-500/40 transition-all group relative overflow-hidden">
+                            
+                            {/* Entry Zone Badge */}
+                            <div className="absolute -top-4 -right-4 bg-green-600 text-white px-10 py-6 rotate-12 font-black text-[10px] uppercase tracking-widest shadow-xl flex flex-col items-center">
+                                <span className="mr-4">ENTRY</span>
+                                <span className="mr-4">ZONE</span>
+                            </div>
+
+                            {/* Top Header */}
+                            <div className="flex justify-between items-start mb-8 relative z-10">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-zinc-800 shadow-lg">
+                                        <img 
+                                            src={`https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`} 
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => (e.currentTarget.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="text-white font-black text-2xl tracking-tighter">{rec.ticker}</h3>
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border tracking-widest ${getRiskColor(rec.riskLevel)}`}>
+                                                {rec.riskLevel} Risk
+                                            </span>
+                                        </div>
+                                        <p className="text-zinc-500 font-bold text-xs mt-1 uppercase tracking-wider">{rec.companyName}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right pr-12">
+                                    <div className="text-[#22c55e] font-black text-2xl flex items-center justify-end gap-2">
+                                        <Target size={20} />
+                                        ${rec.suggestedBuyPrice.toFixed(2)}
+                                    </div>
+                                    <div className="text-zinc-600 text-[10px] font-black uppercase mt-1 tracking-widest">Entry Limit</div>
+                                </div>
+                            </div>
+
+                            {/* Core Valuation Grid */}
+                            <div className="grid grid-cols-4 gap-3 mb-8">
+                                <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
+                                    <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">P/E vs Hist</p>
+                                    <p className="text-white font-bold font-mono">{rec.metrics.pe}</p>
+                                </div>
+                                <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
+                                    <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">PEG Ratio</p>
+                                    <p className="text-white font-bold font-mono">{rec.metrics.peg}</p>
+                                </div>
+                                <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
+                                    <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">ROE %</p>
+                                    <p className="text-white font-bold font-mono">{rec.metrics.roe}</p>
+                                </div>
+                                <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
+                                    <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">Deuda/Cap</p>
+                                    <p className="text-white font-bold font-mono">{rec.metrics.debtToEquity}</p>
+                                </div>
+                            </div>
+
+                            {/* Detailed Analysis Panels */}
+                            <div className="space-y-4">
+                                
+                                {/* Fundamental Panel */}
+                                <div className="bg-blue-500/[0.03] border border-blue-500/10 p-6 rounded-3xl group/pnl hover:bg-blue-500/[0.05] transition-colors">
+                                    <div className="flex items-center gap-3 mb-3 text-blue-400">
+                                        <ShieldCheck size={18} />
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">Tesis Fundamental (Moat & Valor)</h4>
+                                    </div>
+                                    <p className="text-zinc-400 text-sm leading-relaxed">{rec.fundamentalThesis}</p>
+                                </div>
+
+                                {/* Technical Panel */}
+                                <div className="bg-emerald-500/[0.03] border border-emerald-500/10 p-6 rounded-3xl group/pnl hover:bg-emerald-500/[0.05] transition-colors">
+                                    <div className="flex items-center gap-3 mb-3 text-emerald-400">
+                                        <BarChart3 size={18} />
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">Análisis Técnico & Soportes</h4>
+                                    </div>
+                                    <p className="text-zinc-400 text-sm leading-relaxed">{rec.technicalAnalysis}</p>
+                                </div>
+
+                                {/* Sector & Catalysts Grid */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-indigo-500/[0.03] border border-indigo-500/10 p-5 rounded-3xl">
+                                        <div className="flex items-center gap-3 mb-3 text-indigo-400">
+                                            <Layers size={16} />
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.1em]">Situación Sectorial</h4>
+                                        </div>
+                                        <p className="text-zinc-500 text-xs leading-relaxed">{rec.sectorTrends}</p>
+                                    </div>
+                                    <div className="bg-amber-500/[0.03] border border-amber-500/10 p-5 rounded-3xl">
+                                        <div className="flex items-center gap-3 mb-3 text-amber-400">
+                                            <Zap size={16} />
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.1em]">Próximos Catalizadores</h4>
+                                        </div>
+                                        <p className="text-zinc-500 text-xs leading-relaxed">{rec.companyCatalysts}</p>
+                                    </div>
+                                </div>
+
+                                {/* Target & Date Footer */}
+                                <div className="flex justify-between items-center mt-6 pt-6 border-t border-zinc-900/80">
+                                    <div className="flex items-center gap-3">
+                                        <Calendar size={14} className="text-zinc-700" />
+                                        <span className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Analysis Date: {rec.asOfDate}</span>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-right">
+                                            <div className="text-zinc-500 text-[9px] font-black uppercase tracking-widest">Consensus Target</div>
+                                            <div className="text-white font-black text-xl">${rec.targetPrice.toFixed(0)}</div>
+                                        </div>
+                                        <div className="h-10 w-px bg-zinc-800"></div>
+                                        <div className="text-right">
+                                            <div className="text-green-500 text-[9px] font-black uppercase tracking-widest">Potencial Upside</div>
+                                            <div className="text-green-400 font-black text-xl flex items-center gap-1">
+                                                <ArrowUpRight size={18} />
+                                                {(((rec.targetPrice / rec.suggestedBuyPrice) - 1) * 100).toFixed(1)}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    ))}
+                    
+                    <div className="py-12 flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-700">
+                            <AlertCircle size={24} />
+                        </div>
+                        <p className="text-[9px] text-zinc-700 uppercase font-black tracking-[0.4em] text-center max-w-sm leading-relaxed">
+                            DISCLAIMER: ESTO NO ES ASESORÍA FINANCIERA. OPERAR EN BOLSA IMPLICA RIESGO DE CAPITAL.
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default NewsView;
