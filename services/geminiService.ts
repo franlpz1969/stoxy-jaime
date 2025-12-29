@@ -104,7 +104,10 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       Actúa como un Analista Senior de Valor. Tu objetivo es encontrar "Oportunidades de Compra" hoy.
 
       ESTRATEGIA DE BÚSQUEDA (Basada en AlexDitoInvesting y AcademiaDeInversoresUSA):
-      Identifica de 1 a 4 acciones que sean buenos candidatos basándote en:
+      Identifica ENTRE 1 y 4 acciones (MÁXIMO 4) que sean las mejores oportunidades de compra hoy.
+      ORDENAMIENTO OBLIGATORIO: Ordena las recomendaciones de MAYOR a MENOR grado de convicción (la mejor oportunidad primero).
+      
+      Criterios de selección:
       - Valoración: P/E < media sector, PEG < 1.0.
       - Estabilidad: Debt-to-Equity < 1.0, ROE > 10%.
       - Crecimiento: BPA positivo, crecimiento futuro superior a competidores.
