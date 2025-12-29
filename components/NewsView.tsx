@@ -8,6 +8,7 @@ const NewsView = () => {
     const [activeSection, setActiveSection] = useState<'news' | 'recommendations'>('news');
     const [recommendations, setRecommendations] = useState<InvestmentRecommendation[]>([]);
     const [loadingRecs, setLoadingRecs] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (activeSection === 'recommendations' && recommendations.length === 0) {
@@ -17,9 +18,16 @@ const NewsView = () => {
 
     const loadRecommendations = async () => {
         setLoadingRecs(true);
-        const data = await fetchInvestmentRecommendations();
-        setRecommendations(data);
-        setLoadingRecs(false);
+        setError(null);
+        try {
+            const data = await fetchInvestmentRecommendations();
+            setRecommendations(data);
+        } catch (err: any) {
+            console.error("NewsView Error:", err);
+            setError(err.message || "Error al conectar con la IA");
+        } finally {
+            setLoadingRecs(false);
+        }
     };
 
     const news = [
@@ -142,6 +150,17 @@ const NewsView = () => {
                                 <p className="text-white font-black text-lg">Buscando asimetrías de valor...</p>
                                 <p className="text-zinc-500 text-xs mt-1">Escaneando fundamentales y soportes técnicos</p>
                             </div>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
+                            <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mb-6 border border-rose-500/20 shadow-lg">
+                                <AlertCircle size={32} className="text-rose-500" />
+                            </div>
+                            <h3 className="font-bold text-xl text-zinc-400 mb-2">Error de Conexión</h3>
+                            <p className="text-sm text-center max-w-xs text-zinc-600 leading-relaxed mb-6">
+                                {error}
+                            </p>
+                            <button onClick={loadRecommendations} className="bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-zinc-700 shadow-xl hover:bg-zinc-700 transition-colors">Reintentar Conexión</button>
                         </div>
                     ) : recommendations.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-zinc-600">

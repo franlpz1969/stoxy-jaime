@@ -184,68 +184,9 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
       sourceUrls: sourceUrls.length > 0 ? sourceUrls : undefined
     }));
   } catch (error) {
-    console.error("Critical error in fetchInvestmentRecommendations, using full fallback list:", error);
-    return [
-      {
-        ticker: "TGT",
-        companyName: "Target Corporation",
-        suggestedBuyPrice: 98.10,
-        targetPrice: 180,
-        asOfDate: new Date().toISOString().split('T')[0],
-        riskLevel: "Medium",
-        metrics: { pe: "11.9", peg: "0.9", roe: "22%", debtToEquity: "1.2" },
-        fundamentalThesis: "Empresa en la lista admitida con excelente valoración fundamental y técnica.",
-        technicalAnalysis: "Soporte en mínimos de 52 semanas.",
-        sectorTrends: "Consumo discrecional en recuperación.",
-        companyCatalysts: "Mejora operativa.",
-        valuationRadar: { marginMM1000: "+30.44%", peStatus: "Undervalued (11.9 vs 19)" },
-        historicalMatch: {
-          matchedCompany: "Adobe",
-          matchedDate: "03/01/2025",
-          contextSimilarity: "Oportunidad de entrada 'barata' por pesimismo temporal.",
-          justification: "Aprovechamiento de la caída de precio por expectativas no cumplidas."
-        }
-      },
-      {
-        ticker: "PEP",
-        companyName: "PepsiCo Inc",
-        suggestedBuyPrice: 165.40,
-        targetPrice: 195,
-        asOfDate: new Date().toISOString().split('T')[0],
-        riskLevel: "Low",
-        metrics: { pe: "21.5", peg: "2.1", roe: "45%", debtToEquity: "1.8" },
-        fundamentalThesis: "Rey del dividendo con poder de marca inigualable.",
-        technicalAnalysis: "En zona de soporte MM1000.",
-        sectorTrends: "Defensivo y estable.",
-        companyCatalysts: "Estabilización de costes.",
-        valuationRadar: { marginMM1000: "+12.61%", peStatus: "Correct Value" },
-        historicalMatch: {
-          matchedCompany: "PepsiCo",
-          matchedDate: "08/01/2025",
-          contextSimilarity: "Miedo injustificado a fármacos GLP-1.",
-          justification: "Compra de un negocio excelente a precio justo aprovechando el miedo del mercado."
-        }
-      },
-      {
-        ticker: "MSFT",
-        companyName: "Microsoft Corp",
-        suggestedBuyPrice: 415.20,
-        targetPrice: 500,
-        asOfDate: new Date().toISOString().split('T')[0],
-        riskLevel: "Low",
-        metrics: { pe: "34.5", peg: "1.8", roe: "38%", debtToEquity: "0.4" },
-        fundamentalThesis: "Líder indiscutible en IA y Cloud de alta calidad.",
-        technicalAnalysis: "Consolidación en máximos.",
-        sectorTrends: "Tecnología de crecimiento.",
-        companyCatalysts: "Expansión de Copilot.",
-        historicalMatch: {
-          matchedCompany: "Microsoft",
-          matchedDate: "31/01/2025",
-          contextSimilarity: "Mejor forma de jugar la IA a través de software.",
-          justification: "Posición estructural de la cartera por su balance y liderazgo."
-        }
-      }
-    ];
+    console.error("Error in fetchInvestmentRecommendations:", error);
+    // En lugar de devolver una lista falsa, lanzamos el error para que la UI informe del problema real
+    throw new Error("No se pudieron cargar las recomendaciones en este momento por un problema de conexión con la IA.");
   }
 };
 
