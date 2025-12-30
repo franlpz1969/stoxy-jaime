@@ -2,7 +2,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StockData, RecommendationTrend, AnalysisData, EstimateRow, EarningsHistory, InvestmentRecommendation } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe initialization to prevent crash if API key is missing
+const apiKey = process.env.API_KEY || "dummy_key_for_dev";
+const ai = new GoogleGenAI({ apiKey });
 
 const getRaw = (obj: any) => {
   if (obj && typeof obj === 'object') {
