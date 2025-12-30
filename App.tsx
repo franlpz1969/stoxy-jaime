@@ -27,6 +27,7 @@ const EXCHANGE_RATES: Record<string, number> = {
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('portfolio');
   const [language, setLanguage] = useState('en');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [displayCurrency, setDisplayCurrency] = useState('USD');
   const [user, setUser] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -421,13 +422,13 @@ function App() {
   const t = (en: string, es: string) => language === 'es' ? es : en;
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-blue-500/30 relative">
-      <div className="fixed top-0 left-0 right-0 h-96 bg-gradient-to-b from-[#1a1a40] via-black to-black opacity-60 z-0 pointer-events-none" />
+    <div className={`${theme} min-h-screen font-sans selection:bg-blue-500/30 relative bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-300`}>
+      <div className="fixed top-0 left-0 right-0 h-96 bg-gradient-to-b from-blue-100/50 via-gray-50 to-gray-50 dark:from-[#1a1a40] dark:via-black dark:to-black opacity-60 z-0 pointer-events-none" />
       <main className="relative z-10 max-w-lg mx-auto md:max-w-3xl lg:max-w-4xl min-h-screen">
         {isRefreshing && (
-          <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-zinc-800 animate-in fade-in">
+          <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-white/80 dark:bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800 animate-in fade-in shadow-sm">
             <RefreshCw className="animate-spin text-blue-500" size={14} />
-            <span className="text-xs font-bold text-zinc-300">Syncing Prices...</span>
+            <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Syncing Prices...</span>
           </div>
         )}
         {toast && (
@@ -473,32 +474,32 @@ function App() {
         {activeTab === 'news' && <NewsView />}
         {activeTab === 'charts' && <ChartsView portfolio={activePortfolio.positions} />}
       </main>
-      <div className="fixed bottom-0 left-0 right-0 bg-[#121214]/95 backdrop-blur-xl border-t border-zinc-800/50 pb-safe pt-2 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-gray-200 dark:border-zinc-800/50 pb-safe pt-2 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-lg mx-auto flex justify-around items-end pb-2">
-          <button onClick={() => setActiveTab('portfolio')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'portfolio' ? 'text-blue-500 -translate-y-2' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <div className={`p-1 ${activeTab === 'portfolio' && 'bg-blue-500/20 rounded-xl'}`}><Wallet size={24} strokeWidth={activeTab === 'portfolio' ? 2.5 : 2} /></div>
-            <span className={`text-[10px] font-bold ${activeTab === 'portfolio' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Portfolio', 'Portafolio')}</span>
+          <button onClick={() => setActiveTab('portfolio')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'portfolio' ? 'text-blue-600 dark:text-blue-500 -translate-y-2' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'}`}>
+            <div className={`p-1 ${activeTab === 'portfolio' && 'bg-blue-100 dark:bg-blue-500/20 rounded-xl'}`}><Wallet size={24} strokeWidth={activeTab === 'portfolio' ? 2.5 : 2} /></div>
+            <span className={`text-xs font-bold ${activeTab === 'portfolio' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Portfolio', 'Portafolio')}</span>
           </button>
-          <button onClick={() => setActiveTab('markets')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'markets' ? 'text-blue-500 -translate-y-2' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <div className={`p-1 ${activeTab === 'markets' && 'bg-blue-500/20 rounded-xl'}`}><BarChart2 size={24} strokeWidth={activeTab === 'markets' ? 2.5 : 2} /></div>
-            <span className={`text-[10px] font-bold ${activeTab === 'markets' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Markets', 'Mercados')}</span>
+          <button onClick={() => setActiveTab('markets')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'markets' ? 'text-blue-600 dark:text-blue-500 -translate-y-2' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'}`}>
+            <div className={`p-1 ${activeTab === 'markets' && 'bg-blue-100 dark:bg-blue-500/20 rounded-xl'}`}><BarChart2 size={24} strokeWidth={activeTab === 'markets' ? 2.5 : 2} /></div>
+            <span className={`text-xs font-bold ${activeTab === 'markets' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Markets', 'Mercados')}</span>
           </button>
-          <button onClick={() => setActiveTab('charts')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'charts' ? 'text-blue-500 -translate-y-2' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <div className={`p-1 ${activeTab === 'charts' && 'bg-blue-500/20 rounded-xl'}`}><PieChart size={24} strokeWidth={activeTab === 'charts' ? 2.5 : 2} /></div>
-            <span className={`text-[10px] font-bold ${activeTab === 'charts' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Charts', 'Gráficos')}</span>
+          <button onClick={() => setActiveTab('charts')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'charts' ? 'text-blue-600 dark:text-blue-500 -translate-y-2' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'}`}>
+            <div className={`p-1 ${activeTab === 'charts' && 'bg-blue-100 dark:bg-blue-500/20 rounded-xl'}`}><PieChart size={24} strokeWidth={activeTab === 'charts' ? 2.5 : 2} /></div>
+            <span className={`text-xs font-bold ${activeTab === 'charts' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Charts', 'Gráficos')}</span>
           </button>
-          <button onClick={() => setActiveTab('calendar')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'calendar' ? 'text-blue-500 -translate-y-2' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <div className={`p-1 ${activeTab === 'calendar' && 'bg-blue-500/20 rounded-xl'}`}><Calendar size={24} strokeWidth={activeTab === 'calendar' ? 2.5 : 2} /></div>
-            <span className={`text-[10px] font-bold ${activeTab === 'calendar' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Calendar', 'Calendario')}</span>
+          <button onClick={() => setActiveTab('calendar')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'calendar' ? 'text-blue-600 dark:text-blue-500 -translate-y-2' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'}`}>
+            <div className={`p-1 ${activeTab === 'calendar' && 'bg-blue-100 dark:bg-blue-500/20 rounded-xl'}`}><Calendar size={24} strokeWidth={activeTab === 'calendar' ? 2.5 : 2} /></div>
+            <span className={`text-xs font-bold ${activeTab === 'calendar' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('Calendar', 'Calendario')}</span>
           </button>
-          <button onClick={() => setActiveTab('news')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'news' ? 'text-blue-500 -translate-y-2' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <div className={`p-1 ${activeTab === 'news' && 'bg-blue-500/20 rounded-xl'}`}><Newspaper size={24} strokeWidth={activeTab === 'news' ? 2.5 : 2} /></div>
-            <span className={`text-[10px] font-bold ${activeTab === 'news' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('News', 'Noticias')}</span>
+          <button onClick={() => setActiveTab('news')} className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 ${activeTab === 'news' ? 'text-blue-600 dark:text-blue-500 -translate-y-2' : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'}`}>
+            <div className={`p-1 ${activeTab === 'news' && 'bg-blue-100 dark:bg-blue-500/20 rounded-xl'}`}><Newspaper size={24} strokeWidth={activeTab === 'news' ? 2.5 : 2} /></div>
+            <span className={`text-xs font-bold ${activeTab === 'news' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>{t('News', 'Noticias')}</span>
           </button>
         </div>
       </div>
       <AddStockModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSubmit={handleAddStock} loading={loading} error={error} />
-      <SettingsView isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} user={user} onLogin={handleLogin} onLogout={handleLogout} onExport={handleExportData} onImport={handleImportData} language={language} setLanguage={setLanguage} />
+      <SettingsView isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} user={user} onLogin={handleLogin} onLogout={handleLogout} onExport={handleExportData} onImport={handleImportData} language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} />
       {currentActivePosition && <TransactionModal isOpen={!!activePositionId} onClose={() => setActivePositionId(null)} transactions={currentActivePosition.transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} currencySymbol={getCurrencySymbol(currentActivePosition.userCurrency)} currentPrice={currentActivePosition.stock.currentPrice} />}
       {selectedStock && <StockDetailView stock={selectedStock} onClose={() => setSelectedStock(null)} language={language} />}
       <PortfolioAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} analysisText={analysisResult} isAnalyzing={isAnalyzing} />

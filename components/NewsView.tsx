@@ -76,20 +76,20 @@ const NewsView = () => {
             {/* Header & Toggle Switch */}
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold tracking-tight">Intelligence</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Intelligence</h1>
                 </div>
 
-                <div className="bg-zinc-900/50 p-1 rounded-xl border border-zinc-800 flex relative">
+                <div className="bg-gray-200 dark:bg-zinc-900/50 p-1 rounded-xl border border-gray-300 dark:border-zinc-800 flex relative">
                     <button
                         onClick={() => setActiveSection('news')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'news' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/50' : 'text-zinc-500 hover:text-zinc-300'
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'news' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
                             }`}
                     >
                         Market News
                     </button>
                     <button
                         onClick={() => setActiveSection('recommendations')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'recommendations' ? 'bg-zinc-800 text-white shadow-sm border border-zinc-700/50' : 'text-zinc-500 hover:text-zinc-300'
+                        className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'recommendations' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
                             }`}
                     >
                         Oportunidades
@@ -99,26 +99,26 @@ const NewsView = () => {
 
             {/* Content: News Tab */}
             {activeSection === 'news' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {news.map((item, i) => (
-                        <div key={i} className="bg-[#151517] border border-zinc-800 rounded-2xl p-5 hover:bg-zinc-900 transition-colors cursor-pointer group">
-                            <div className="flex justify-between items-start mb-2">
+                        <div key={i} className="bg-white dark:bg-[#151517] border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group shadow-sm">
+                            <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-blue-500 font-bold text-xs uppercase tracking-wide">{item.source}</span>
-                                    <span className="text-zinc-600 text-xs">• {item.time}</span>
+                                    <span className="text-blue-600 dark:text-blue-500 font-bold text-sm uppercase tracking-wide">{item.source}</span>
+                                    <span className="text-gray-500 dark:text-zinc-600 text-sm">• {item.time}</span>
                                 </div>
-                                <div className="bg-zinc-800 text-zinc-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                                <div className="bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-xs font-bold px-3 py-1 rounded uppercase">
                                     {item.tag}
                                 </div>
                             </div>
-                            <h3 className="text-white font-bold text-lg mb-2 leading-snug group-hover:text-blue-400 transition-colors">
+                            <h3 className="text-gray-900 dark:text-white font-bold text-2xl mb-3 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                 {item.title}
                             </h3>
-                            <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
+                            <p className="text-gray-600 dark:text-zinc-500 text-lg line-clamp-3 leading-relaxed">
                                 {item.snippet}
                             </p>
-                            <div className="mt-4 flex items-center text-zinc-600 text-xs font-medium group-hover:text-zinc-400">
-                                Read full story <ExternalLink size={12} className="ml-1" />
+                            <div className="mt-5 flex items-center text-gray-500 dark:text-zinc-600 text-sm font-medium group-hover:text-gray-700 dark:group-hover:text-zinc-400">
+                                Read full story <ExternalLink size={16} className="ml-1" />
                             </div>
                         </div>
                     ))}
@@ -130,13 +130,13 @@ const NewsView = () => {
                 <div className="space-y-6 animate-in fade-in duration-500">
 
                     {/* Legend / Source Info */}
-                    <div className="bg-gradient-to-r from-green-600/10 to-blue-600/10 border border-green-500/20 rounded-3xl p-6 flex items-center gap-5 shadow-lg">
-                        <div className="w-12 h-12 rounded-2xl bg-green-600/20 flex items-center justify-center text-green-400 shrink-0">
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-600/10 dark:to-blue-600/10 border border-green-200 dark:border-green-500/20 rounded-3xl p-6 flex items-center gap-5 shadow-lg">
+                        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-green-600/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0 shadow-sm dark:shadow-none">
                             <Target size={24} />
                         </div>
                         <div>
-                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Buy Now Analysis</h4>
-                            <p className="text-zinc-500 text-xs leading-tight mt-1">Filtrando activos infravalorados y puntos de entrada tácticos inmediatos.</p>
+                            <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Buy Now Analysis</h4>
+                            <p className="text-gray-600 dark:text-zinc-500 text-xs leading-tight mt-1">Filtrando activos infravalorados y puntos de entrada tácticos inmediatos.</p>
                         </div>
                     </div>
 
@@ -144,39 +144,39 @@ const NewsView = () => {
                         <div className="flex flex-col items-center justify-center py-24 gap-6">
                             <div className="relative">
                                 <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full animate-pulse"></div>
-                                <Loader2 className="absolute inset-0 m-auto animate-spin text-blue-500" size={32} />
+                                <Loader2 className="absolute inset-0 m-auto animate-spin text-blue-600 dark:text-blue-500" size={32} />
                             </div>
                             <div className="text-center">
-                                <p className="text-white font-black text-lg">Buscando asimetrías de valor...</p>
-                                <p className="text-zinc-500 text-xs mt-1">Escaneando fundamentales y soportes técnicos</p>
+                                <p className="text-gray-900 dark:text-white font-black text-xl">Buscando asimetrías de valor...</p>
+                                <p className="text-gray-500 dark:text-zinc-500 text-sm mt-1">Escaneando fundamentales y soportes técnicos</p>
                             </div>
                         </div>
                     ) : error ? (
-                        <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
-                            <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mb-6 border border-rose-500/20 shadow-lg">
+                        <div className="flex flex-col items-center justify-center py-24 text-gray-500 dark:text-zinc-600">
+                            <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-500/20 shadow-lg">
                                 <AlertCircle size={32} className="text-rose-500" />
                             </div>
-                            <h3 className="font-bold text-xl text-zinc-400 mb-2">Error de Conexión</h3>
-                            <p className="text-sm text-center max-w-xs text-zinc-600 leading-relaxed mb-6">
+                            <h3 className="font-bold text-2xl text-gray-900 dark:text-zinc-400 mb-2">Error de Conexión</h3>
+                            <p className="text-base text-center max-w-xs text-gray-600 dark:text-zinc-600 leading-relaxed mb-6">
                                 {error}
                             </p>
-                            <button onClick={loadRecommendations} className="bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-zinc-700 shadow-xl hover:bg-zinc-700 transition-colors">Reintentar Conexión</button>
+                            <button onClick={loadRecommendations} className="bg-gray-900 dark:bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-gray-800 dark:border-zinc-700 shadow-xl hover:bg-gray-800 dark:hover:bg-zinc-700 transition-colors">Reintentar Conexión</button>
                         </div>
                     ) : recommendations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-24 text-zinc-600">
-                            <div className="w-20 h-20 bg-zinc-900/50 rounded-full flex items-center justify-center mb-6 border border-zinc-800 shadow-lg">
+                        <div className="flex flex-col items-center justify-center py-24 text-gray-500 dark:text-zinc-600">
+                            <div className="w-20 h-20 bg-gray-100 dark:bg-zinc-900/50 rounded-full flex items-center justify-center mb-6 border border-gray-200 dark:border-zinc-800 shadow-lg">
                                 <Lightbulb size={32} className="opacity-40" />
                             </div>
-                            <h3 className="font-bold text-xl text-zinc-400 mb-2">Evaluando Activos</h3>
-                            <p className="text-sm text-center max-w-xs text-zinc-600 leading-relaxed mb-6">
+                            <h3 className="font-bold text-2xl text-gray-900 dark:text-zinc-400 mb-2">Evaluando Activos</h3>
+                            <p className="text-base text-center max-w-xs text-gray-600 dark:text-zinc-600 leading-relaxed mb-6">
                                 No se han encontrado oportunidades con margen de seguridad suficiente en este momento.
                             </p>
-                            <button onClick={loadRecommendations} className="bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-zinc-700 shadow-xl">Reintentar Escaneo</button>
+                            <button onClick={loadRecommendations} className="bg-gray-900 dark:bg-zinc-800 text-white px-8 py-3 rounded-2xl text-sm font-bold border border-gray-800 dark:border-zinc-700 shadow-xl">Reintentar Escaneo</button>
                         </div>
                     ) : (
                         <div className="space-y-8 pb-20">
                             {recommendations.map((rec, i) => (
-                                <div key={i} className="bg-[#121214] border border-zinc-800 rounded-[2.5rem] p-8 hover:border-green-500/40 transition-all group relative overflow-hidden">
+                                <div key={i} className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-zinc-800 rounded-[2.5rem] p-8 hover:border-green-500/40 transition-all group relative overflow-hidden shadow-lg dark:shadow-none">
 
                                     {/* Entry Zone Badge */}
                                     <div className="absolute -top-4 -right-4 bg-green-600 text-white px-10 py-6 rotate-12 font-black text-[10px] uppercase tracking-widest shadow-xl flex flex-col items-center">
@@ -187,49 +187,57 @@ const NewsView = () => {
                                     {/* Top Header */}
                                     <div className="flex justify-between items-start mb-8 relative z-10">
                                         <div className="flex items-center gap-5">
-                                            <div className="w-14 h-14 bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-zinc-800 shadow-lg">
+                                            <div className="w-20 h-20 bg-white dark:bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-lg">
                                                 <img
-                                                    src={`https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`}
-                                                    className="w-10 h-10 object-contain"
-                                                    onError={(e) => (e.currentTarget.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`)}
+                                                    src={rec.logoUrl || `https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`}
+                                                    className="w-12 h-12 object-contain"
+                                                    onError={(e) => {
+                                                        const target = e.currentTarget;
+                                                        // Fallback chain: LogoURL -> Clearbit Ticker -> UI Avatars (Initials)
+                                                        if (target.src === rec.logoUrl && rec.logoUrl) {
+                                                            target.src = `https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`;
+                                                        } else {
+                                                            target.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`;
+                                                        }
+                                                    }}
                                                 />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-3">
-                                                    <h3 className="text-white font-black text-2xl tracking-tighter">{rec.ticker}</h3>
-                                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border tracking-widest ${getRiskColor(rec.riskLevel)}`}>
+                                                    <h3 className="text-gray-900 dark:text-white font-black text-4xl tracking-tighter">{rec.ticker}</h3>
+                                                    <span className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase border tracking-widest ${getRiskColor(rec.riskLevel)}`}>
                                                         {rec.riskLevel} Risk
                                                     </span>
                                                 </div>
-                                                <p className="text-zinc-500 font-bold text-xs mt-1 uppercase tracking-wider">{rec.companyName}</p>
+                                                <p className="text-gray-500 dark:text-zinc-500 font-bold text-base mt-1 uppercase tracking-wider">{rec.companyName}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right pr-12">
-                                            <div className="text-[#22c55e] font-black text-2xl flex items-center justify-end gap-2">
-                                                <Target size={20} />
+                                        <div className="text-right pr-6 lg:pr-12">
+                                            <div className="text-green-600 dark:text-[#22c55e] font-black text-4xl flex items-center justify-end gap-2">
+                                                <Target size={30} />
                                                 ${rec.suggestedBuyPrice.toFixed(2)}
                                             </div>
-                                            <div className="text-zinc-600 text-[10px] font-black uppercase mt-1 tracking-widest">Precio Actual</div>
+                                            <div className="text-gray-400 dark:text-zinc-600 text-xs font-black uppercase mt-1 tracking-widest">Precio Actual</div>
                                         </div>
                                     </div>
 
                                     {/* Core Valuation Grid */}
-                                    <div className="grid grid-cols-4 gap-3 mb-8">
-                                        <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
-                                            <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">P/E vs Hist</p>
-                                            <p className="text-white font-bold font-mono">{rec.metrics.pe}</p>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                                        <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/50 p-5 rounded-2xl text-center">
+                                            <p className="text-gray-500 dark:text-zinc-600 text-xs font-black uppercase mb-1 tracking-tighter">P/E vs Hist</p>
+                                            <p className="text-gray-900 dark:text-white font-bold font-mono text-xl">{rec.metrics.pe}</p>
                                         </div>
-                                        <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
-                                            <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">PEG Ratio</p>
-                                            <p className="text-white font-bold font-mono">{rec.metrics.peg}</p>
+                                        <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/50 p-5 rounded-2xl text-center">
+                                            <p className="text-gray-500 dark:text-zinc-600 text-xs font-black uppercase mb-1 tracking-tighter">PEG Ratio</p>
+                                            <p className="text-gray-900 dark:text-white font-bold font-mono text-xl">{rec.metrics.peg}</p>
                                         </div>
-                                        <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
-                                            <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">ROE %</p>
-                                            <p className="text-white font-bold font-mono">{rec.metrics.roe}</p>
+                                        <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/50 p-5 rounded-2xl text-center">
+                                            <p className="text-gray-500 dark:text-zinc-600 text-xs font-black uppercase mb-1 tracking-tighter">ROE %</p>
+                                            <p className="text-gray-900 dark:text-white font-bold font-mono text-xl">{rec.metrics.roe}</p>
                                         </div>
-                                        <div className="bg-zinc-900/40 border border-zinc-800/50 p-4 rounded-2xl text-center">
-                                            <p className="text-zinc-600 text-[10px] font-black uppercase mb-1 tracking-tighter">Deuda/Cap</p>
-                                            <p className="text-white font-bold font-mono">{rec.metrics.debtToEquity}</p>
+                                        <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/50 p-5 rounded-2xl text-center">
+                                            <p className="text-gray-500 dark:text-zinc-600 text-xs font-black uppercase mb-1 tracking-tighter">Deuda/Cap</p>
+                                            <p className="text-gray-900 dark:text-white font-bold font-mono text-xl">{rec.metrics.debtToEquity}</p>
                                         </div>
                                     </div>
 
@@ -238,20 +246,20 @@ const NewsView = () => {
 
                                         {/* Fundamental Panel */}
                                         <div className="bg-blue-500/[0.03] border border-blue-500/10 p-6 rounded-3xl group/pnl hover:bg-blue-500/[0.05] transition-colors">
-                                            <div className="flex items-center gap-3 mb-3 text-blue-400">
-                                                <ShieldCheck size={18} />
-                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">Tesis Fundamental (Moat & Valor)</h4>
+                                            <div className="flex items-center gap-3 mb-3 text-blue-500">
+                                                <ShieldCheck size={20} />
+                                                <h4 className="text-xs font-black uppercase tracking-[0.2em]">Tesis Fundamental (Moat & Valor)</h4>
                                             </div>
-                                            <p className="text-zinc-400 text-sm leading-relaxed">{rec.fundamentalThesis}</p>
+                                            <p className="text-gray-700 dark:text-zinc-400 text-base leading-relaxed">{rec.fundamentalThesis}</p>
                                         </div>
 
                                         {/* Technical Panel */}
                                         <div className="bg-emerald-500/[0.03] border border-emerald-500/10 p-6 rounded-3xl group/pnl hover:bg-emerald-500/[0.05] transition-colors">
-                                            <div className="flex items-center gap-3 mb-3 text-emerald-400">
-                                                <BarChart3 size={18} />
-                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">Análisis Técnico & Soportes</h4>
+                                            <div className="flex items-center gap-3 mb-3 text-emerald-500">
+                                                <BarChart3 size={20} />
+                                                <h4 className="text-xs font-black uppercase tracking-[0.2em]">Análisis Técnico & Soportes</h4>
                                             </div>
-                                            <p className="text-zinc-400 text-sm leading-relaxed">{rec.technicalAnalysis}</p>
+                                            <p className="text-gray-700 dark:text-zinc-400 text-base leading-relaxed">{rec.technicalAnalysis}</p>
                                         </div>
 
                                         {/* Sector & Catalysts Grid */}
@@ -261,14 +269,14 @@ const NewsView = () => {
                                                     <Layers size={16} />
                                                     <h4 className="text-[10px] font-black uppercase tracking-[0.1em]">Situación Sectorial</h4>
                                                 </div>
-                                                <p className="text-zinc-500 text-xs leading-relaxed">{rec.sectorTrends}</p>
+                                                <p className="text-gray-600 dark:text-zinc-500 text-sm leading-relaxed">{rec.sectorTrends}</p>
                                             </div>
                                             <div className="bg-amber-500/[0.03] border border-amber-500/10 p-5 rounded-3xl">
                                                 <div className="flex items-center gap-3 mb-3 text-amber-400">
                                                     <Zap size={16} />
                                                     <h4 className="text-[10px] font-black uppercase tracking-[0.1em]">Próximos Catalizadores</h4>
                                                 </div>
-                                                <p className="text-zinc-500 text-xs leading-relaxed">{rec.companyCatalysts}</p>
+                                                <p className="text-gray-600 dark:text-zinc-500 text-sm leading-relaxed">{rec.companyCatalysts}</p>
                                             </div>
                                         </div>
 
@@ -351,10 +359,10 @@ const NewsView = () => {
                             ))}
 
                             <div className="py-12 flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-700">
+                                <div className="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 flex items-center justify-center text-gray-400 dark:text-zinc-700">
                                     <AlertCircle size={24} />
                                 </div>
-                                <p className="text-[9px] text-zinc-700 uppercase font-black tracking-[0.4em] text-center max-w-sm leading-relaxed">
+                                <p className="text-[10px] text-gray-400 dark:text-zinc-700 uppercase font-black tracking-[0.4em] text-center max-w-sm leading-relaxed">
                                     DISCLAIMER: ESTO NO ES ASESORÍA FINANCIERA. OPERAR EN BOLSA IMPLICA RIESGO DE CAPITAL.
                                 </p>
                             </div>

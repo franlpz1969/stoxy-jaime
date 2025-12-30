@@ -97,6 +97,7 @@ export interface InvestmentRecommendation {
     justification: string;
   };
   sourceUrls?: string[];
+  logoUrl?: string;
 }
 
 export interface EstimateRow {
