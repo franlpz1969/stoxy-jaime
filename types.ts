@@ -60,6 +60,7 @@ export interface StockData {
   analystRating?: number;
   priceTarget?: { low: number; high: number; average: number };
   recommendationTrend?: RecommendationTrend[];
+  exchange?: string;
 }
 
 export interface RecommendationTrend {

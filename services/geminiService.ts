@@ -338,16 +338,36 @@ export const generateMockStockData = (symbol: string): StockData => {
     priceToBook: 12.4,
     enterpriseValueToRevenue: 9.1,
     enterpriseValueToEbitda: 18.5,
-    volume: '25M'
+    volume: '25M',
+    // Fallback Mock Data for new fields
+    previousClose: price * 0.99,
+    openPrice: price * 0.995,
+    dayLow: price * 0.98,
+    dayHigh: price * 1.02,
+    fiftyTwoWeekLow: price * 0.8,
+    fiftyTwoWeekHigh: price * 1.2,
+    dividendYield: 0.025,
+    avgVolume: 25000000,
+    beta: 1.1,
+    eps: 4.5,
+    exDividendDate: "2024-05-15",
+    exchange: "NASDAQ"
   };
 };
 
 export const fetchStockData = async (query: string): Promise<StockData> => {
   try {
-    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${query}?modules=price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend`;
-    const res = await fetchYahoo(url);
-    const r = res.quoteSummary?.result?.[0];
-    if (!r) return generateMockStockData(query);
+    // UPDATED: Use backend proxy to fetch Yahoo data directly
+    const res = await fetch(`/api/quote-summary/${query}`);
+    if (!res.ok) throw new Error("API Offline");
+    const json = await res.json();
+    console.log("Yahoo Data Received for", query, ":", json); // Debug info
+    const r = json.quoteSummary?.result?.[0];
+
+    if (!r) {
+      console.warn('No Yahoo data result for', query);
+      return generateMockStockData(query);
+    }
 
     const base = generateMockStockData(query);
     const p = r.price || {};
@@ -370,13 +390,30 @@ export const fetchStockData = async (query: string): Promise<StockData> => {
       priceToBook: getRaw(ks.priceToBook) || base.priceToBook,
       enterpriseValueToRevenue: getRaw(ks.enterpriseValueToRevenue) || base.enterpriseValueToRevenue,
       enterpriseValueToEbitda: getRaw(ks.enterpriseValueToEbitda) || base.enterpriseValueToEbitda,
+
+      // New Google Finance fields
+      previousClose: getRaw(sd.previousClose) || getRaw(p.regularMarketPreviousClose),
+      openPrice: getRaw(sd.open) || getRaw(p.regularMarketOpen),
+      dayLow: getRaw(sd.dayLow) || getRaw(p.regularMarketDayLow),
+      dayHigh: getRaw(sd.dayHigh) || getRaw(p.regularMarketDayHigh),
+      fiftyTwoWeekLow: getRaw(sd.fiftyTwoWeekLow),
+      fiftyTwoWeekHigh: getRaw(sd.fiftyTwoWeekHigh),
+      dividendYield: getRaw(sd.dividendYield),
+      avgVolume: getRaw(sd.averageVolume) || getRaw(p.averageDailyVolume10Day),
+      beta: getRaw(sd.beta) || getRaw(ks.beta),
+      eps: getRaw(ks.trailingEps) || getRaw(ks.forwardEps),
+      exDividendDate: getRaw(sd.exDividendDate)?.fmt,
+      exchange: getRaw(p.exchangeName) || getRaw(p.exchange),
+
       description: getRaw(r.summaryProfile?.longBusinessSummary) || base.description,
       logoUrl: `https://logo.clearbit.com/${getRaw(r.summaryProfile?.website)?.replace(/^https?:\/\//, '') || query + '.com'}`
     };
   } catch (e) {
+    console.error("Fetch Data Error:", e);
     return generateMockStockData(query);
   }
 };
+
 
 export const fetchStockHistory = async (symbol: string, range: string) => {
   try {

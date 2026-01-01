@@ -18,11 +18,12 @@ const formatNumber = (num: any) => {
     let val = typeof num === 'string' ? parseFloat(num.replace(/[^0-9.-]/g, '')) : num;
     if (isNaN(val)) return num;
     const absVal = Math.abs(val);
-    if (absVal >= 1.0e12) return (val / 1.0e12).toFixed(2) + 'T';
-    if (absVal >= 1.0e9) return (val / 1.0e9).toFixed(2) + 'B';
-    if (absVal >= 1.0e6) return (val / 1.0e6).toFixed(2) + 'M';
-    if (absVal >= 1.0e3) return (val / 1.0e3).toFixed(2) + 'k';
-    return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const locale = 'es-ES'; // Use commas for decimals
+    if (absVal >= 1.0e12) return (val / 1.0e12).toLocaleString(locale, { maximumFractionDigits: 2 }) + ' T';
+    if (absVal >= 1.0e9) return (val / 1.0e9).toLocaleString(locale, { maximumFractionDigits: 2 }) + ' B';
+    if (absVal >= 1.0e6) return (val / 1.0e6).toLocaleString(locale, { maximumFractionDigits: 2 }) + ' M';
+    if (absVal >= 1.0e3) return (val / 1.0e3).toLocaleString(locale, { maximumFractionDigits: 2 }) + ' k';
+    return val.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, onClose, language = 'en' }) => {
@@ -41,18 +42,6 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
         const loadFull = async () => {
             const full = await fetchStockData(stock.symbol);
             if (full) setStock(full);
-
-            try {
-                const response = await fetch(`/api/yahoo-stats/${stock.symbol}`);
-                if (response.ok) {
-                    const yahooStats = await response.json();
-                    if (Object.keys(yahooStats).length > 0) {
-                        setStock(prev => ({ ...prev, ...yahooStats }));
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load Yahoo stats:', error);
-            }
         };
         loadFull();
     }, [stock.symbol]);
@@ -219,18 +208,17 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
 
                 <div className="mt-6 pb-20">
                     {activeTab === 'Rates' && (
-                        <div className="px-6 space-y-4">
-                            <h3 className="text-white font-bold text-lg">Medidas de Valoración / Valuation Measures</h3>
-                            <div className="border border-zinc-800 rounded-2xl overflow-hidden bg-[#0c0c0d]">
-                                <TableRow labelEs="Capitalización de mercado" labelEn="Market Cap" value={formatNumber(stock.marketCap)} />
-                                <TableRow labelEs="Valor de empresa" labelEn="Enterprise Value (EV)" value={formatNumber(stock.enterpriseValue)} />
-                                <TableRow labelEs="P/E últimos 12 meses" labelEn="Trailing P/E" value={stock.trailingPE?.toFixed(2)} />
-                                <TableRow labelEs="Precio/beneficio anticipado" labelEn="Forward P/E" value={stock.forwardPE?.toFixed(2)} />
-                                <TableRow labelEs="Ratio precio-expectativas de beneficio" labelEn="PEG Ratio (5yr expected)" value={stock.pegRatio?.toFixed(2)} />
-                                <TableRow labelEs="Precio/ventas" labelEn="Price-to-Sales (P/S)" value={stock.priceToSales?.toFixed(2)} />
-                                <TableRow labelEs="Precio/valor" labelEn="Price-to-Book (P/B)" value={stock.priceToBook?.toFixed(2)} />
-                                <TableRow labelEs="Valor/Ingresos de la empresa" labelEn="EV/Revenue" value={stock.enterpriseValueToRevenue?.toFixed(2)} />
-                                <TableRow labelEs="Valor/EBITDA de empresa" labelEn="EV/EBITDA" value={stock.enterpriseValueToEbitda?.toFixed(2)} />
+                        <div className="px-6 space-y-6">
+                            <h3 className="text-white font-bold text-lg hidden">Key Statistics</h3>
+                            <div className="border-t border-zinc-900">
+                                <TableRow labelEs="CIERRE ANTERIOR" labelEn="Previous Close" value={stock.previousClose?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + stock.currency} />
+                                <TableRow labelEs="INTERVALO DIARIO" labelEn="Day Range" value={stock.dayLow && stock.dayHigh ? `${stock.dayLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.dayHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                <TableRow labelEs="INTERVALO ANUAL" labelEn="Year Range" value={stock.fiftyTwoWeekLow && stock.fiftyTwoWeekHigh ? `${stock.fiftyTwoWeekLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.fiftyTwoWeekHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                <TableRow labelEs="CAP. BURSÁTIL" labelEn="Market Cap" value={formatNumber(stock.marketCap) + ' ' + stock.currency} />
+                                <TableRow labelEs="VOLUMEN MEDIO" labelEn="Avg Volume" value={formatNumber(stock.avgVolume)} />
+                                <TableRow labelEs="RELACIÓN PRECIO-BENEFICIO" labelEn="P/E Ratio" value={stock.trailingPE?.toFixed(2)} />
+                                <TableRow labelEs="RENTABILIDAD POR DIVIDENDO" labelEn="Dividend Yield" value={stock.dividendYield ? `${(stock.dividendYield * 100).toFixed(2)} %` : '-'} />
+                                <TableRow labelEs="BOLSA DE VALORES PRINCIPAL" labelEn="Primary Exchange" value={stock.exchange || (stock.currency === 'USD' ? 'NASDAQ' : 'BME')} />
                             </div>
                         </div>
                     )}

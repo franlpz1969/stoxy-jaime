@@ -26,6 +26,12 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (symbol, range)
   );
+
+  CREATE TABLE IF NOT EXISTS stock_quotes (
+    symbol TEXT PRIMARY KEY,
+    data TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 export default db;

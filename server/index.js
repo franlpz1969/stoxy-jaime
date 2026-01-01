@@ -140,75 +140,110 @@ app.get('/api/stock-history/:symbol/:range', async (req, res) => {
     }
 });
 
-// Yahoo Finance Statistics Scraper
-app.get('/api/yahoo-stats/:symbol', async (req, res) => {
-    try {
-        const { symbol } = req.params;
-        const url = `https://finance.yahoo.com/quote/${symbol}/key-statistics/`;
+// Yahoo Finance Session Management
+let yahooSession = { crumb: null, cookie: null };
 
-        // Use more realistic browser headers to avoid detection
-        const response = await fetch(url, {
+async function refreshYahooSession() {
+    try {
+        console.log('Refreshing Yahoo Session...');
+        // 1. Get Cookie
+        const cookieReq = await fetch('https://fc.yahoo.com', {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        });
+        const setCookie = cookieReq.headers.get('set-cookie');
+
+        if (!setCookie) throw new Error('No cookie returned from fc.yahoo.com');
+        const cookie = setCookie.split(';')[0]; // Extract first part
+
+        // 2. Get Crumb
+        const crumbReq = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Cache-Control': 'max-age=0'
+                'Cookie': cookie
             }
         });
+
+        if (!crumbReq.ok) throw new Error(`Failed to get crumb: ${crumbReq.status}`);
+        const crumb = await crumbReq.text();
+
+        yahooSession = { crumb, cookie };
+        console.log('Yahoo Session Refreshed. Crumb:', crumb);
+        return true;
+    } catch (error) {
+        console.error('Yahoo Session Error:', error);
+        return false;
+    }
+}
+
+// Yahoo Finance Quote Summary Proxy
+app.get('/api/quote-summary/:symbol', async (req, res) => {
+    try {
+        const { symbol } = req.params;
+
+        // 1. Check Cache
+        const cached = db.prepare('SELECT data, updated_at FROM stock_quotes WHERE symbol = ?').get(symbol);
+        if (cached) {
+            const cacheDate = new Date(cached.updated_at).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+
+            if (cacheDate === today) {
+                console.log(`Serving cached quote summary for ${symbol}`);
+                return res.json(JSON.parse(cached.data));
+            }
+        }
+
+        // 2. Fetch Fresh Data
+        if (!yahooSession.crumb) {
+            await refreshYahooSession();
+        }
+
+        const modules = 'price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend';
+        let url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${yahooSession.crumb}`;
+
+        const fetchOptions = {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Cookie': yahooSession.cookie
+            }
+        };
+
+        let response = await fetch(url, fetchOptions);
+
+        if (response.status === 401) {
+            console.log('Got 401 from Yahoo, retrying with new session...');
+            await refreshYahooSession();
+            url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${yahooSession.crumb}`;
+            fetchOptions.headers.Cookie = yahooSession.cookie;
+            response = await fetch(url, fetchOptions);
+        }
 
         if (!response.ok) {
-            console.error(`Yahoo Finance responded with ${response.status} for ${symbol}`);
-            // Return empty stats instead of error to allow app to continue with mock data
-            return res.json({});
+            console.error(`Yahoo API error: ${response.status}`);
+            return res.status(response.status).json({});
         }
 
-        const html = await response.text();
-        const stats = {};
+        const data = await response.json();
 
-        // Try to extract data from JSON embedded in the page (more reliable)
-        const jsonMatch = html.match(/root\.App\.main\s*=\s*({.+?});/);
-        if (jsonMatch) {
+        // 3. Cache Data
+        if (data.quoteSummary?.result) {
             try {
-                const data = JSON.parse(jsonMatch[1]);
-                const quoteData = data?.context?.dispatcher?.stores?.QuoteSummaryStore;
-
-                if (quoteData) {
-                    const summary = quoteData.defaultKeyStatistics || {};
-                    const financial = quoteData.financialData || {};
-                    const price = quoteData.summaryDetail || {};
-
-                    stats.marketCap = summary.marketCap?.fmt || summary.marketCap?.raw;
-                    stats.enterpriseValue = summary.enterpriseValue?.fmt || summary.enterpriseValue?.raw;
-                    stats.trailingPE = summary.trailingEps?.fmt || summary.trailingEps?.raw;
-                    stats.forwardPE = summary.forwardPE?.fmt || summary.forwardPE?.raw;
-                    stats.pegRatio = summary.pegRatio?.fmt || summary.pegRatio?.raw;
-                    stats.priceToSales = summary.priceToSalesTrailing12Months?.fmt || summary.priceToSalesTrailing12Months?.raw;
-                    stats.priceToBook = summary.priceToBook?.fmt || summary.priceToBook?.raw;
-                    stats.enterpriseValueToRevenue = summary.enterpriseToRevenue?.fmt || summary.enterpriseToRevenue?.raw;
-                    stats.enterpriseValueToEbitda = summary.enterpriseToEbitda?.fmt || summary.enterpriseToEbitda?.raw;
-                }
-            } catch (parseError) {
-                console.error('Failed to parse Yahoo Finance JSON:', parseError);
+                db.prepare(`
+                    INSERT INTO stock_quotes (symbol, data, updated_at) 
+                    VALUES (?, ?, datetime('now')) 
+                    ON CONFLICT(symbol) DO UPDATE SET 
+                        data = excluded.data, 
+                        updated_at = datetime('now')
+                `).run(symbol, JSON.stringify(data));
+                console.log(`Cached quote summary for ${symbol}`);
+            } catch (dbError) {
+                console.error('Failed to cache quote summary:', dbError);
             }
         }
 
-        // Filter out null/undefined values
-        Object.keys(stats).forEach(key => {
-            if (!stats[key]) delete stats[key];
-        });
-
-        console.log(`Fetched stats for ${symbol}:`, Object.keys(stats).length > 0 ? stats : 'No data');
-        res.json(stats);
+        res.json(data);
     } catch (error) {
-        console.error('Scraper error:', error.message);
-        // Return empty object instead of error to allow app to use mock data
-        res.json({});
+        console.error('Quote summary proxy error:', error);
+        res.status(500).json({ error: 'Failed to fetch quote summary' });
     }
 });
 
