@@ -5,7 +5,7 @@ import fs from 'fs';
 // Ensure data directory exists
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
 const dbPath = path.join(dataDir, 'database.sqlite');
@@ -17,7 +17,15 @@ db.exec(`
     id TEXT PRIMARY KEY,
     data TEXT NOT NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
+  );
+
+  CREATE TABLE IF NOT EXISTS stock_history (
+    symbol TEXT NOT NULL,
+    range TEXT NOT NULL,
+    data TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (symbol, range)
+  );
 `);
 
 export default db;

@@ -59,6 +59,87 @@ app.post('/api/portfolios', (req, res) => {
     }
 });
 
+// Stock History with Caching
+app.get('/api/stock-history/:symbol/:range', async (req, res) => {
+    try {
+        const { symbol, range } = req.params;
+
+        // 1. Check Cache
+        const cached = db.prepare('SELECT data, updated_at FROM stock_history WHERE symbol = ? AND range = ?').get(symbol, range);
+        if (cached) {
+            const now = Date.now();
+            const updatedAt = new Date(cached.updated_at).getTime();
+            // Cache duration: 15 mins for intraday (1D, 5D), 24 hours for others
+            const maxAge = (range === '1D' || range === '5D') ? 1000 * 60 * 15 : 1000 * 60 * 60 * 24;
+
+            if (now - updatedAt < maxAge) {
+                // If the data is empty or invalid JSON, we might want to refetch, but let's assume valid
+                try {
+                    const data = JSON.parse(cached.data);
+                    if (data && data.length > 0) {
+                        return res.json(data);
+                    }
+                } catch (e) { /* ignore parse error and refetch */ }
+            }
+        }
+
+        // 2. Fetch from Yahoo Finance
+        let r = '1y', i = '1d';
+        switch (range) {
+            case '1D': r = '1d'; i = '5m'; break;
+            case '5D': r = '5d'; i = '15m'; break;
+            case '1M': r = '1mo'; i = '1d'; break;
+            case '6M': r = '6mo'; i = '1d'; break;
+            case '1Y': r = '1y'; i = '1d'; break;
+            case '5Y': r = '5y'; i = '1wk'; break;
+            case 'MAX': r = 'max'; i = '1mo'; break;
+            default: r = '1y'; i = '1d';
+        }
+
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${r}&interval=${i}`;
+        console.log(`Fetching live history for ${symbol} (${range}) from Yahoo...`);
+
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Yahoo API error: ${response.status}`);
+        }
+
+        const json = await response.json();
+        const result = json.chart?.result?.[0];
+
+        if (!result) {
+            return res.json([]);
+        }
+
+        const t = result.timestamp || [];
+        const c = result.indicators?.quote?.[0]?.close || [];
+
+        // Process data
+        const historyData = t.map((time, idx) => ({
+            timestamp: time * 1000,
+            price: c[idx]
+        })).filter(d => d.price !== null && d.price !== undefined);
+
+        // 3. Save to Cache
+        if (historyData.length > 0) {
+            const stmt = db.prepare(`
+                INSERT OR REPLACE INTO stock_history (symbol, range, data, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            `);
+            stmt.run(symbol, range, JSON.stringify(historyData));
+        }
+
+        res.json(historyData);
+
+    } catch (error) {
+        console.error('History fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
 // Yahoo Finance Statistics Scraper
 app.get('/api/yahoo-stats/:symbol', async (req, res) => {
     try {

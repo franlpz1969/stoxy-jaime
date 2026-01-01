@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid } from 'recharts';
 import { StockData, AnalysisData } from '../types';
 import { fetchAnalysisData, fetchStockHistory, fetchStockData } from '../services/geminiService';
 
@@ -34,18 +34,18 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
     const [analysis, setAnalysis] = useState<AnalysisData>({});
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
+    // Hover state for interactive chart
+    const [hoveredData, setHoveredData] = useState<{ price: number; date: number } | null>(null);
+
     useEffect(() => {
         const loadFull = async () => {
             const full = await fetchStockData(stock.symbol);
             if (full) setStock(full);
 
-            // Fetch real Yahoo Finance statistics
             try {
                 const response = await fetch(`/api/yahoo-stats/${stock.symbol}`);
                 if (response.ok) {
                     const yahooStats = await response.json();
-                    console.log('Yahoo Finance stats loaded:', yahooStats);
-                    // Merge Yahoo stats with existing stock data
                     if (Object.keys(yahooStats).length > 0) {
                         setStock(prev => ({ ...prev, ...yahooStats }));
                     }
@@ -125,13 +125,15 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
 
             <div className="flex-1 overflow-y-auto bg-black">
                 <div className="px-6 pt-8 pb-4">
-                    <div className="text-5xl font-bold tracking-tight mb-2">
+                    <div className="text-5xl font-bold tracking-tight mb-2 font-mono tabular-nums">
                         {stock.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-xl text-zinc-500 ml-2 font-medium align-top mt-1 inline-block">{stock.currency}</span>
+                        <span className="text-xl text-zinc-500 ml-2 font-sans font-medium align-top mt-1 inline-block">{stock.currency}</span>
                     </div>
-                    <div className={`flex items-center gap-2 font-bold text-lg ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                        {isPositive ? '+' : ''}{stock.dayChangePercent.toFixed(2)}%
-                        {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                    <div className="flex items-center justify-between h-8">
+                        <div className={`flex items-center gap-2 font-bold text-lg ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                            {isPositive ? '+' : ''}{stock.dayChangePercent.toFixed(2)}%
+                            {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                        </div>
                     </div>
                 </div>
 
@@ -143,20 +145,65 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                     </div>
                 </div>
 
-                <div className="h-[280px] w-full mt-4">
+                <div className="h-[350px] w-full mt-6 select-none">
                     {chartLoading ? (
                         <div className="w-full h-full flex items-center justify-center"><Loader2 className="text-blue-500 animate-spin" size={32} /></div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.2} /><stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} /><stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <XAxis hide dataKey="timestamp" />
-                                <YAxis hide domain={['auto', 'auto']} />
-                                <Area type="monotone" dataKey="price" stroke={chartColor} strokeWidth={2} fill="url(#colorPrice)" isAnimationActive={true} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                                <XAxis
+                                    dataKey="timestamp"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 11 }}
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                    minTickGap={50}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    domain={['auto', 'auto']}
+                                    orientation="left"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#71717a', fontSize: 11 }}
+                                    width={40}
+                                    tickFormatter={(val) => val.toFixed(0)}
+                                    dx={-5}
+                                />
+                                <Tooltip
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                                <div className="bg-white text-zinc-900 border border-zinc-200 p-3 rounded-md shadow-lg min-w-[140px]">
+                                                    <div className="font-bold text-sm">
+                                                        {data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {stock.currency}
+                                                    </div>
+                                                    <div className="text-xs text-zinc-500 mt-1">
+                                                        {new Date(data.timestamp).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                    cursor={{ stroke: '#5f6368', strokeWidth: 1, strokeDasharray: '3 3' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="price"
+                                    stroke={chartColor}
+                                    strokeWidth={2}
+                                    fill="url(#colorPrice)"
+                                    isAnimationActive={false}
+                                    activeDot={{ r: 5, fill: chartColor, stroke: '#fff', strokeWidth: 2 }}
+                                />
                             </AreaChart>
                         </ResponsiveContainer>
                     )}

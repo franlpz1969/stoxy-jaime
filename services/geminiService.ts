@@ -16,7 +16,7 @@ const getRaw = (obj: any) => {
 
 const fetchYahoo = async (url: string) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
   try {
     const encodedUrl = encodeURIComponent(url);
@@ -380,17 +380,14 @@ export const fetchStockData = async (query: string): Promise<StockData> => {
 
 export const fetchStockHistory = async (symbol: string, range: string) => {
   try {
-    let r = '1mo', i = '1d';
-    if (range === '1D') { r = '1d'; i = '5m'; }
-    else if (range === '5D') { r = '5d'; i = '15m'; }
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${r}&interval=${i}`;
-    const data = await fetchYahoo(url);
-    const res = data.chart?.result?.[0];
-    if (!res) return [];
-    const t = res.timestamp || [];
-    const c = res.indicators?.quote?.[0]?.close || [];
-    return t.map((time: number, idx: number) => ({ timestamp: time * 1000, price: c[idx] })).filter((d: any) => d.price);
-  } catch (e) { return []; }
+    const response = await fetch(`/api/stock-history/${symbol}/${range}`);
+    if (!response.ok) throw new Error('Backend invalid response');
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    console.error("History fetch failed:", e);
+    return [];
+  }
 };
 
 export const fetchAnalysisData = async (symbol: string): Promise<AnalysisData | null> => {
