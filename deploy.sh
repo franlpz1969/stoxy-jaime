@@ -37,9 +37,8 @@ echo "--- Deploying to Cloud Run ---"
 gcloud run deploy $IMAGE_NAME \
   --image "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest" \
   --execution-environment gen2 \
-  --allow-unauthenticated \
-  --add-volume "name=db-volume,type=cloud-storage,bucket=$BUCKET_NAME" \
-  --add-volume-mount "volume=db-volume,mount-path=/app/data" \
-  --timeout 300
+  --allow-unauthenticated --timeout 300
+  # --add-volume "name=db-volume,type=cloud-storage,bucket=$BUCKET_NAME" \
+  # --add-volume-mount "volume=db-volume,mount-path=/app/data" \
 
 echo "--- Deployment Process Finished ---"
