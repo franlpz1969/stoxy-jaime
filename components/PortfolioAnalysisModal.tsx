@@ -198,29 +198,28 @@ const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
 
       <div className="bg-white dark:bg-[#050505] w-full max-w-6xl h-full flex flex-col relative z-10 shadow-[0_0_100px_rgba(0,0,0,0.2)] dark:shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-gray-200 dark:border-zinc-900/50">
 
-        {/* Narrative Institutional Header */}
-        <div className="px-6 md:px-12 py-8 md:py-12 flex justify-between items-start border-b border-gray-100 dark:border-zinc-900/50 bg-white/80 dark:bg-black/40 backdrop-blur-3xl sticky top-0 z-20">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-50 dark:bg-blue-600/10 rounded-xl border border-blue-200 dark:border-blue-500/20">
-                <Sparkles size={24} className="text-blue-600 dark:text-blue-500 animate-pulse" />
+        {/* Narrative Institutional Header - COMPACT VERSION */}
+        <div className="px-5 py-4 flex justify-between items-center border-b border-gray-100 dark:border-zinc-900/50 bg-white/80 dark:bg-black/40 backdrop-blur-3xl sticky top-0 z-20 shrink-0">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-blue-50 dark:bg-blue-600/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
+                <Sparkles size={16} className="text-blue-600 dark:text-blue-500 animate-pulse" />
               </div>
-              <span className="text-gray-500 dark:text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em]">System Intelligence v3.5 • High Conviction</span>
+              <h2 className="text-xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
+                Análisis Estratégico
+              </h2>
             </div>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tighter">
-              Análisis Estratégico
-            </h2>
-            <div className="flex items-center gap-5 text-gray-400 dark:text-zinc-600 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">
-              <span className="px-2 py-0.5 border border-gray-200 dark:border-zinc-800 rounded bg-gray-50 dark:bg-zinc-900/30">ID: SEC-INT-99</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></span>
-              <span className="hidden md:inline">Informe de Activos de Grado Institucional</span>
+            <div className="flex items-center gap-3 text-gray-400 dark:text-zinc-600 text-[9px] font-bold uppercase tracking-[0.2em] pl-1">
+              <span className="px-1.5 py-0.5 border border-gray-200 dark:border-zinc-800 rounded bg-gray-50 dark:bg-zinc-900/30">SEC-INT-99</span>
+              <span className="w-1 h-1 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)]"></span>
+              <span>Informe Institucional</span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-3 md:p-5 rounded-2xl bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-white transition-all shadow-sm hover:shadow-md dark:shadow-2xl active:scale-90 border border-gray-200 dark:border-zinc-800/50 group"
+            className="p-2 rounded-xl bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-white transition-all shadow-sm border border-gray-200 dark:border-zinc-800/50 group"
           >
-            <X size={26} className="group-hover:rotate-90 transition-transform duration-500" />
+            <X size={20} className="group-hover:rotate-90 transition-transform duration-500" />
           </button>
         </div>
 
@@ -313,13 +312,13 @@ const PortfolioAnalysisModal: React.FC<PortfolioAnalysisModalProps> = ({
 
         {/* Floating High-End Footer Action */}
         {!isAnalyzing && (
-          <div className="p-10 border-t border-gray-200 dark:border-zinc-900/50 bg-white/60 dark:bg-black/60 backdrop-blur-3xl flex justify-center sticky bottom-0 z-30">
+          <div className="p-4 md:p-6 border-t border-gray-200 dark:border-zinc-900/50 bg-white/80 dark:bg-black/80 backdrop-blur-3xl flex justify-center sticky bottom-0 z-30">
             <button
               onClick={onClose}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-20 py-5 rounded-full text-[11px] transition-all shadow-[0_20px_40px_rgba(37,99,235,0.25)] active:scale-95 flex items-center justify-center gap-5 uppercase tracking-[0.3em] hover:shadow-[0_20px_50px_rgba(37,99,235,0.4)]"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black px-10 py-4 rounded-full text-[11px] transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3 uppercase tracking-[0.2em]"
             >
-              <CheckCircle2 size={20} />
-              Confirmar Lectura del Informe
+              <CheckCircle2 size={18} />
+              Confirmar Lectura
             </button>
           </div>
         )}
