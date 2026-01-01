@@ -8,6 +8,8 @@ export interface StockData {
   logoUrl?: string;
   marketStatus?: 'open' | 'closed';
   description?: string;
+  sector?: string;
+  country?: string;
   marketCap?: number;
   peRatio?: number;
   eps?: number;
