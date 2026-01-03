@@ -78,7 +78,10 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
         }
     }, [activeTab, stock.symbol]);
 
-    const isPositive = stock.dayChangePercent >= 0;
+    const previousClose = stock.previousClose || (stock.currentPrice / (1 + (stock.dayChangePercent || 0) / 100));
+    const absChange = stock.currentPrice - previousClose;
+    const pctChange = previousClose !== 0 ? (absChange / previousClose) * 100 : 0;
+    const isPositive = absChange >= 0;
     const chartColor = isPositive ? '#22c55e' : '#ef4444';
 
     const TableRow = ({ labelEs, labelEn, value }: { labelEs: string, labelEn: string, value: any }) => (
@@ -120,7 +123,7 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                     </div>
                     <div className="flex items-center justify-between h-8">
                         <div className={`flex items-center gap-2 font-bold text-lg ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                            {isPositive ? '+' : ''}{stock.dayChangePercent.toFixed(2)}%
+                            {isPositive ? '+' : ''}{absChange.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({pctChange.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
                             {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                         </div>
                     </div>
