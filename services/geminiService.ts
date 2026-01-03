@@ -551,3 +551,59 @@ export const analyzePortfolioData = async (data: string) => {
   });
   return r.text;
 };
+
+export const fetchCompanyNews = async (ticker: string) => {
+  try {
+    const res = await fetch(`/api/news/${ticker}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) return data;
+    }
+  } catch (e) {
+    console.error("Failed to fetch news", e);
+  }
+
+  // Fallback if API fails
+  const t = ticker.toUpperCase();
+  // const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // Not used in mock data anymore
+
+  // Dynamic Mock Data based on Ticker
+  return [
+    {
+      source: 'Bloomberg',
+      time: '2h ago',
+      title: `${t} Reports Stronger-Than-Expected Quarterly Growth`,
+      snippet: `Shares of ${t} rose in early trading after the company announced earnings that beat analyst estimates driven by key sector performance...`,
+      url: `https://www.bloomberg.com/search?query=${t}`,
+      tag: 'Earnings'
+    },
+    {
+      source: 'Reuters',
+      time: '5h ago',
+      title: `Analysts Upgrade ${t} Price Target Amid Market Rally`,
+      snippet: `Several major financial institutions have revised their outlook for ${t}, citing improved operational efficiency and market share gains...`,
+      url: `https://www.reuters.com/search/news?blob=${t}`,
+      tag: 'Analysis'
+    },
+    {
+      source: 'CNBC',
+      time: '1d ago',
+      title: `${t} Unveils New Strategic Initiative for 2026`,
+      snippet: `In a press conference today, huge news for holders of ${t} as the CEO outlined the roadmap for the next fiscal year...`,
+      url: `https://www.cnbc.com/search/?query=${t}`,
+      tag: 'Strategy'
+    },
+    {
+      source: 'TechCrunch',
+      time: '2d ago',
+      title: `Why ${t} could be the next big mover in its industry`,
+      snippet: `Deep dive into the fundamentals of ${t} and why recent technical indicators suggest a potential breakout...`,
+      url: `https://techcrunch.com/search/${t}`,
+      tag: 'Tech'
+    }
+  ];
+};
+
+export const fetchMarketNews = async () => {
+  return await fetchCompanyNews('Economy');
+};

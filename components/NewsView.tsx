@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Newspaper, ExternalLink, Lightbulb, TrendingUp, Loader2, Sparkles, Target, Calendar, AlertCircle, BarChart3, Zap, Globe, ShieldCheck, Layers, ArrowUpRight } from 'lucide-react';
+import { Newspaper, ExternalLink, Lightbulb, TrendingUp, Loader2, Sparkles, Target, Calendar, AlertCircle, BarChart3, Zap, Globe, ShieldCheck, Layers, ArrowUpRight, Clock } from 'lucide-react';
 import { InvestmentRecommendation } from '../types';
-import { fetchInvestmentRecommendations } from '../services/geminiService';
+import { fetchInvestmentRecommendations, fetchMarketNews } from '../services/geminiService';
 
 const NewsView = () => {
     const [activeSection, setActiveSection] = useState<'news' | 'recommendations'>('news');
@@ -30,36 +30,20 @@ const NewsView = () => {
         }
     };
 
-    const news = [
-        {
-            source: 'Bloomberg',
-            time: '2h ago',
-            title: 'Fed Signals One More Rate Hike Before Pausing Cycle',
-            snippet: 'Federal Reserve officials suggested they are leaning toward one final interest-rate increase in May...',
-            tag: 'Macro'
-        },
-        {
-            source: 'TechCrunch',
-            time: '4h ago',
-            title: 'Apple Announces New AI Integration for iPhone 16',
-            snippet: 'The tech giant revealed its long-awaited artificial intelligence features during the annual WWDC keynote...',
-            tag: 'Tech'
-        },
-        {
-            source: 'CNBC',
-            time: '5h ago',
-            title: 'Oil Prices Surge Amid Geopolitical Tensions in Middle East',
-            snippet: 'Crude futures jumped over 3% on Monday morning as traders reacted to the latest developments...',
-            tag: 'Energy'
-        },
-        {
-            source: 'Reuters',
-            time: '8h ago',
-            title: 'Bitcoin Reclaims $68k Level as ETF Inflows Accelerate',
-            snippet: 'Cryptocurrency markets saw a broad rally today led by Bitcoin, driven by institutional demand...',
-            tag: 'Crypto'
+    const [news, setNews] = useState<any[]>([]);
+    const [loadingNews, setLoadingNews] = useState(false);
+
+    useEffect(() => {
+        if (activeSection === 'news' && news.length === 0) {
+            const load = async () => {
+                setLoadingNews(true);
+                const data = await fetchMarketNews();
+                setNews(data);
+                setLoadingNews(false);
+            };
+            load();
         }
-    ];
+    }, [activeSection]);
 
     const getRiskColor = (level: string) => {
         switch (level) {
@@ -100,28 +84,38 @@ const NewsView = () => {
             {/* Content: News Tab */}
             {activeSection === 'news' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {news.map((item, i) => (
-                        <div key={i} className="bg-white dark:bg-[#151517] border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group shadow-sm">
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-blue-600 dark:text-blue-500 font-bold text-sm uppercase tracking-wide">{item.source}</span>
-                                    <span className="text-gray-500 dark:text-zinc-600 text-sm">• {item.time}</span>
+                    {loadingNews ? (
+                        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" /></div>
+                    ) : (
+                        news.map((item, i) => (
+                            <a
+                                key={i}
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block bg-white dark:bg-[#151517] border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group shadow-sm"
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={14} className="text-gray-400 dark:text-zinc-600" />
+                                        <span className="text-gray-500 dark:text-zinc-600 text-sm">{item.time}</span>
+                                    </div>
+                                    <div className="bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-xs font-bold px-3 py-1 rounded uppercase">
+                                        {item.tag}
+                                    </div>
                                 </div>
-                                <div className="bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-xs font-bold px-3 py-1 rounded uppercase">
-                                    {item.tag}
+                                <h3 className="text-gray-900 dark:text-white font-bold text-2xl mb-3 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {item.title}
+                                </h3>
+                                <p className="text-gray-600 dark:text-zinc-500 text-lg line-clamp-3 leading-relaxed">
+                                    {item.snippet}
+                                </p>
+                                <div className="mt-5 flex items-center text-blue-600 dark:text-blue-500 font-bold text-sm uppercase tracking-wide group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                                    {item.source} <ExternalLink size={16} className="ml-1" />
                                 </div>
-                            </div>
-                            <h3 className="text-gray-900 dark:text-white font-bold text-2xl mb-3 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                {item.title}
-                            </h3>
-                            <p className="text-gray-600 dark:text-zinc-500 text-lg line-clamp-3 leading-relaxed">
-                                {item.snippet}
-                            </p>
-                            <div className="mt-5 flex items-center text-gray-500 dark:text-zinc-600 text-sm font-medium group-hover:text-gray-700 dark:group-hover:text-zinc-400">
-                                Read full story <ExternalLink size={16} className="ml-1" />
-                            </div>
-                        </div>
-                    ))}
+                            </a>
+                        ))
+                    )}
                 </div>
             )}
 

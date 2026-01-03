@@ -285,6 +285,65 @@ app.get('/api/quote-summary/:symbol', async (req, res) => {
     }
 });
 
+
+// Google News RSS (More relevant search-based results)
+app.get('/api/news/:symbol', async (req, res) => {
+    try {
+        const { symbol } = req.params;
+        // Search query for specific company stock news
+        const url = `https://news.google.com/rss/search?q=${symbol}+stock&hl=en-US&gl=US&ceid=US:en`;
+
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch RSS');
+
+        const xml = await response.text();
+        const $ = cheerio.load(xml, { xmlMode: true });
+
+        const newsItems = [];
+        $('item').each((i, el) => {
+            if (i > 15) return; // Limit to 15 items
+            const titleFull = $(el).find('title').text();
+            const link = $(el).find('link').text();
+            const pubDate = $(el).find('pubDate').text();
+
+            // Google News parsing
+            // Title usually "Headline - Source"
+            let title = titleFull;
+            let source = $(el).find('source').text() || 'Google News';
+
+            const splitTitle = titleFull.lastIndexOf(' - ');
+            if (splitTitle !== -1) {
+                source = titleFull.substring(splitTitle + 3);
+                title = titleFull.substring(0, splitTitle);
+            }
+
+            // Description in Google News is often HTML snippet, we'll strip tags
+            // For simplified display, we might just use the title as snippet if desc is poor
+            const rawDesc = $(el).find('description').text();
+            const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, '');
+
+            newsItems.push({
+                source: source,
+                time: new Date(pubDate).toLocaleDateString(),
+                title: title,
+                snippet: cleanDesc.length > 10 ? (cleanDesc.slice(0, 150) + '...') : title, // Fallback to title if desc is empty
+                url: link,
+                tag: 'News'
+            });
+        });
+
+        res.json(newsItems);
+    } catch (error) {
+        console.error('RSS News fetch error:', error);
+        res.status(500).json([]);
+    }
+});
+
 // Google Finance Scraper
 app.get('/api/google-finance/:ticker', async (req, res) => {
     try {
@@ -450,8 +509,8 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
         console.error('Google Finance Scraping Error:', error);
         res.status(500).json({});
     }
-});
 
+});
 // Serve Static Files (Production/Docker)
 if (process.env.NODE_ENV === 'production') {
     const distPath = path.resolve(__dirname, '../dist');

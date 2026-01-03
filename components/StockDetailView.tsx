@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2, ExternalLink } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid } from 'recharts';
 import { StockData, AnalysisData } from '../types';
-import { fetchAnalysisData, fetchStockHistory, fetchStockData } from '../services/geminiService';
+import { fetchAnalysisData, fetchStockHistory, fetchStockData, fetchCompanyNews } from '../services/geminiService';
 import { StockNotes } from './StockNotes';
 
 interface StockDetailViewProps {
@@ -35,6 +35,8 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
     const [chartLoading, setChartLoading] = useState(false);
     const [analysis, setAnalysis] = useState<AnalysisData>({});
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+    const [news, setNews] = useState<any[]>([]);
+    const [loadingNews, setLoadingNews] = useState(false);
 
     // Hover state for interactive chart
     const [hoveredData, setHoveredData] = useState<{ price: number; date: number } | null>(null);
@@ -76,6 +78,14 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                 setLoadingAnalysis(false);
             };
             load();
+        } else if (activeTab === 'News') {
+            const loadNews = async () => {
+                setLoadingNews(true);
+                const data = await fetchCompanyNews(stock.symbol);
+                setNews(data);
+                setLoadingNews(false);
+            };
+            loadNews();
         }
     }, [activeTab, stock.symbol]);
 
@@ -225,6 +235,42 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                 </div>
 
                 <div className="mt-6 pb-20">
+                    {activeTab === 'News' && (
+                        <div className="px-6 space-y-6">
+                            {loadingNews ? (
+                                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" /></div>
+                            ) : (
+                                news.map((item, i) => (
+                                    <a
+                                        key={i}
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 hover:bg-zinc-900 transition-colors cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Clock size={14} className="text-zinc-600" />
+                                                <span className="text-zinc-600 text-sm">{item.time}</span>
+                                            </div>
+                                            <div className="bg-zinc-800 text-zinc-400 text-xs font-bold px-3 py-1 rounded uppercase">
+                                                {item.tag}
+                                            </div>
+                                        </div>
+                                        <h3 className="text-white font-bold text-lg mb-3 leading-snug group-hover:text-blue-400 transition-colors">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-zinc-500 text-sm line-clamp-3 leading-relaxed">
+                                            {item.snippet}
+                                        </p>
+                                        <div className="mt-5 flex items-center text-blue-500 font-bold text-sm uppercase tracking-wide group-hover:text-blue-400">
+                                            {item.source} <ExternalLink size={16} className="ml-1" />
+                                        </div>
+                                    </a>
+                                ))
+                            )}
+                        </div>
+                    )}
                     {activeTab === 'Rates' && (
                         <div className="px-6 space-y-6">
                             <h3 className="text-white font-bold text-lg hidden">Key Statistics</h3>
