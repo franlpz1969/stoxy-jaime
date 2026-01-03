@@ -3,6 +3,7 @@ import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Shar
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid } from 'recharts';
 import { StockData, AnalysisData } from '../types';
 import { fetchAnalysisData, fetchStockHistory, fetchStockData } from '../services/geminiService';
+import { StockNotes } from './StockNotes';
 
 interface StockDetailViewProps {
     stock: StockData;
@@ -11,7 +12,7 @@ interface StockDetailViewProps {
 }
 
 const TIMEFRAMES = ['1D', '5D', '1M', '6M', '1Y', '5Y', 'MAX'];
-const TABS = ['Chart', 'Rates', 'News', 'Notes', 'Analysis'];
+const TABS = ['Chart', 'Rates', 'News', 'Info', 'Notes', 'Analysis'];
 
 const formatNumber = (num: any) => {
     if (num === undefined || num === null) return 'N/A';
@@ -279,6 +280,9 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                         </div>
                     )}
                     {activeTab === 'Notes' && (
+                        <StockNotes symbol={stock.symbol} />
+                    )}
+                    {activeTab === 'Info' && (
                         <div className="px-6 py-4">
                             <div className="bg-[#0c0c0d] rounded-2xl p-6 border border-zinc-800">
                                 <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><Info size={18} className="text-blue-500" /> Summary</h3>
