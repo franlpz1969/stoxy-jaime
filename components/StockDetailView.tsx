@@ -225,18 +225,75 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
 
                 <div className="mt-6 pb-20">
                     {activeTab === 'Rates' && (
-                        <div className="px-6 space-y-6">
-                            <h3 className="text-white font-bold text-lg hidden">Key Statistics</h3>
-                            <div className="border-t border-zinc-900">
-                                <TableRow labelEs="CIERRE ANTERIOR" labelEn="Previous Close" value={stock.previousClose?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + stock.currency} />
-                                <TableRow labelEs="INTERVALO DIARIO" labelEn="Day Range" value={stock.dayLow && stock.dayHigh ? `${stock.dayLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.dayHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
-                                <TableRow labelEs="INTERVALO ANUAL" labelEn="Year Range" value={stock.fiftyTwoWeekLow && stock.fiftyTwoWeekHigh ? `${stock.fiftyTwoWeekLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.fiftyTwoWeekHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
-                                <TableRow labelEs="CAP. BURSÁTIL" labelEn="Market Cap" value={formatNumber(stock.marketCap) + ' ' + stock.currency} />
-                                <TableRow labelEs="VOLUMEN MEDIO" labelEn="Avg Volume" value={formatNumber(stock.avgVolume)} />
-                                <TableRow labelEs="RELACIÓN PRECIO-BENEFICIO" labelEn="P/E Ratio" value={stock.trailingPE?.toFixed(2)} />
-                                <TableRow labelEs="RENTABILIDAD POR DIVIDENDO" labelEn="Dividend Yield" value={stock.dividendYield ? `${(stock.dividendYield * 100).toFixed(2)} %` : '-'} />
-                                <TableRow labelEs="BOLSA DE VALORES PRINCIPAL" labelEn="Primary Exchange" value={stock.exchange || (stock.currency === 'USD' ? 'NASDAQ' : 'BME')} />
+                        <div className="px-6 pb-8 space-y-8">
+
+                            {/* Price Statistics */}
+                            <div>
+                                <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">Price Statistics</h3>
+                                <div className="space-y-0">
+                                    <TableRow labelEs="CIERRE ANTERIOR" labelEn="Previous Close" value={stock.previousClose?.toLocaleString(undefined, { minimumFractionDigits: 2 })} />
+                                    <TableRow labelEs="APERTURA" labelEn="Open" value={stock.openPrice?.toLocaleString(undefined, { minimumFractionDigits: 2 })} />
+                                    <TableRow labelEs="RANGO DIARIO" labelEn="Day Range" value={stock.dayLow && stock.dayHigh ? `${stock.dayLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.dayHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                    <TableRow labelEs="RANGO 52 SEMANAS" labelEn="52 Week Range" value={stock.fiftyTwoWeekLow && stock.fiftyTwoWeekHigh ? `${stock.fiftyTwoWeekLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.fiftyTwoWeekHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                    <TableRow labelEs="VOLUMEN" labelEn="Volume" value={formatNumber(stock.volume)} />
+                                    <TableRow labelEs="VOLUMEN MEDIO" labelEn="Avg Volume" value={formatNumber(stock.avgVolume)} />
+                                    <TableRow labelEs="BETA (5Y MENSUAL)" labelEn="Beta" value={stock.beta?.toFixed(2)} />
+                                </div>
                             </div>
+
+                            {/* Valuation */}
+                            <div>
+                                <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">Valuation</h3>
+                                <div className="space-y-0">
+                                    <TableRow labelEs="CAP. BURSÁTIL" labelEn="Market Cap" value={formatNumber(stock.marketCap)} />
+                                    <TableRow labelEs="VALOR DE EMPRESA" labelEn="Enterprise Value" value={formatNumber(stock.enterpriseValue)} />
+                                    <TableRow labelEs="PER (TTM)" labelEn="Trailing P/E" value={stock.trailingPE?.toFixed(2)} />
+                                    <TableRow labelEs="PER (ESTIMADO)" labelEn="Forward P/E" value={stock.forwardPE?.toFixed(2)} />
+                                    <TableRow labelEs="RATIO PEG" labelEn="PEG Ratio" value={stock.pegRatio?.toFixed(2)} />
+                                    <TableRow labelEs="PRECIO/VENTAS" labelEn="Price/Sales" value={stock.priceToSales?.toFixed(2)} />
+                                    <TableRow labelEs="PRECIO/LIBROS" labelEn="Price/Book" value={stock.priceToBook?.toFixed(2)} />
+                                </div>
+                            </div>
+
+                            {/* Profitability */}
+                            <div>
+                                <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">Profitability & Income</h3>
+                                <div className="space-y-0">
+                                    <TableRow labelEs="BPA (TTM)" labelEn="EPS (TTM)" value={stock.dilutedEpsTTM?.toFixed(2)} />
+                                    <TableRow labelEs="MARGEN DE BENEFICIO" labelEn="Profit Margin" value={stock.profitMargin ? `${(stock.profitMargin * 100).toFixed(2)}%` : '-'} />
+                                    <TableRow labelEs="MARGEN OPERATIVO" labelEn="Operating Margin" value={stock.operatingMargin ? `${(stock.operatingMargin * 100).toFixed(2)}%` : '-'} />
+                                    <TableRow labelEs="RETORNO S/ ACTIVOS" labelEn="ROA" value={stock.returnOnAssets ? `${(stock.returnOnAssets * 100).toFixed(2)}%` : '-'} />
+                                    <TableRow labelEs="RETORNO S/ PATRIMONIO" labelEn="ROE" value={stock.returnOnEquity ? `${(stock.returnOnEquity * 100).toFixed(2)}%` : '-'} />
+                                    <TableRow labelEs="INGRESOS (TTM)" labelEn="Revenue (TTM)" value={formatNumber(stock.revenueTTM)} />
+                                    <TableRow labelEs="EBITDA" labelEn="EBITDA" value={formatNumber(stock.ebitda)} />
+                                </div>
+                            </div>
+
+                            {/* Balance Sheet */}
+                            <div>
+                                <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">Balance Sheet</h3>
+                                <div className="space-y-0">
+                                    <TableRow labelEs="EFECTIVO TOTAL" labelEn="Total Cash" value={formatNumber(stock.totalCash)} />
+                                    <TableRow labelEs="DEUDA TOTAL" labelEn="Total Debt" value={formatNumber(stock.totalDebt)} />
+                                    <TableRow labelEs="DEUDA/CAPITAL" labelEn="Debt/Equity" value={stock.totalDebtToEquity?.toFixed(2)} />
+                                    <TableRow labelEs="RATIO CORRIENTE" labelEn="Current Ratio" value={stock.currentRatio?.toFixed(2)} />
+                                    <TableRow labelEs="VALOR EN LIBROS" labelEn="Book Value Per Share" value={stock.bookValuePerShare?.toFixed(2)} />
+                                </div>
+                            </div>
+
+                            {/* Dividends */}
+                            {(stock.dividendYield !== undefined && stock.dividendYield > 0) && (
+                                <div>
+                                    <h3 className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">Dividends</h3>
+                                    <div className="space-y-0">
+                                        <TableRow labelEs="RENTABILIDAD DIV." labelEn="Dividend Yield" value={`${(stock.dividendYield * 100).toFixed(2)}%`} />
+                                        <TableRow labelEs="TASA DE DIVIDENDO" labelEn="Dividend Rate" value={stock.dividendRate?.toFixed(2)} />
+                                        <TableRow labelEs="RATIO DE REPARTO" labelEn="Payout Ratio" value={stock.payoutRatio ? `${(stock.payoutRatio * 100).toFixed(2)}%` : '-'} />
+                                        <TableRow labelEs="FECHA EX-DIVIDENDO" labelEn="Ex-Dividend Date" value={stock.exDividendDate ? new Date(stock.exDividendDate).toLocaleDateString() : '-'} />
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     )}
                     {activeTab === 'Analysis' && (
