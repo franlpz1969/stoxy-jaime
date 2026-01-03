@@ -78,10 +78,24 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
         }
     }, [activeTab, stock.symbol]);
 
-    const previousClose = stock.previousClose || (stock.currentPrice / (1 + (stock.dayChangePercent || 0) / 100));
-    const absChange = stock.currentPrice - previousClose;
-    const pctChange = previousClose !== 0 ? (absChange / previousClose) * 100 : 0;
-    const isPositive = absChange >= 0;
+    const periodStats = useMemo(() => {
+        let basePrice = stock.previousClose || (stock.currentPrice / (1 + (stock.dayChangePercent || 0) / 100));
+        let current = stock.currentPrice;
+
+        if (chartData.length > 0 && !chartLoading) {
+            current = chartData[chartData.length - 1].price;
+            if (activeTimeframe !== '1D') {
+                basePrice = chartData[0].price;
+            }
+        }
+
+        const abs = current - basePrice;
+        const pct = basePrice !== 0 ? (abs / basePrice) * 100 : 0;
+
+        return { abs, pct, isPositive: abs >= 0 };
+    }, [chartData, activeTimeframe, chartLoading, stock.previousClose, stock.currentPrice, stock.dayChangePercent]);
+
+    const { abs: absChange, pct: pctChange, isPositive } = periodStats;
     const chartColor = isPositive ? '#22c55e' : '#ef4444';
 
     const TableRow = ({ labelEs, labelEn, value }: { labelEs: string, labelEn: string, value: any }) => (
