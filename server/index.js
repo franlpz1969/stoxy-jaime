@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
+import * as cheerio from 'cheerio';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -244,6 +245,139 @@ app.get('/api/quote-summary/:symbol', async (req, res) => {
     } catch (error) {
         console.error('Quote summary proxy error:', error);
         res.status(500).json({ error: 'Failed to fetch quote summary' });
+    }
+});
+
+// Google Finance Scraper
+app.get('/api/google-finance/:ticker', async (req, res) => {
+    try {
+        const { ticker } = req.params;
+
+        // Basic fallback heuristic for ticker format if needed
+        let queryTicker = ticker;
+        if (!queryTicker.includes(':')) {
+            queryTicker = `${ticker}:NASDAQ`;
+        }
+
+        const url = `https://www.google.com/finance/quote/${queryTicker}?hl=es`;
+        console.log(`Scraping Google Finance: ${url}`);
+
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Google Finance error: ${response.status}`);
+        }
+
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        const data = {};
+
+        const parseValue = (text) => {
+            if (!text) return null;
+            let clean = text.replace(/USD|EUR|\$|€/g, '').trim();
+
+            let multiplier = 1;
+            if (clean.includes(' B')) { multiplier = 1e9; clean = clean.replace(' B', ''); }
+            else if (clean.includes(' M')) { multiplier = 1e6; clean = clean.replace(' M', ''); }
+            else if (clean.includes(' k')) { multiplier = 1e3; clean = clean.replace(' k', ''); }
+            else if (clean.includes(' T')) { multiplier = 1e12; clean = clean.replace(' T', ''); }
+
+            clean = clean.replace(/\./g, '').replace(',', '.').replace(/%/g, '').trim();
+            const val = parseFloat(clean);
+            return isNaN(val) ? text : val * multiplier;
+        };
+
+        const labels = {
+            'Cierre anterior': 'previousClose',
+            'CIERRE ANTERIOR': 'previousClose',
+            'Intervalo diario': 'dayRange',
+            'INTERVALO DIARIO': 'dayRange',
+            'Intervalo anual': 'yearRange',
+            'INTERVALO ANUAL': 'yearRange',
+            'Cap. bursátil': 'marketCap',
+            'CAP. BURSÁTIL': 'marketCap',
+            'Volumen medio': 'avgVolume',
+            'VOLUMEN MEDIO': 'avgVolume',
+            'Relación precio-beneficio': 'peRatio',
+            'RELACIÓN PRECIO-BENEFICIO': 'peRatio',
+            'Rentabilidad por dividendo': 'dividendYield',
+            'RENTABILIDAD POR DIVIDENDO': 'dividendYield',
+            'Bolsa de valores principal': 'primaryExchange',
+            'BOLSA DE VALORES PRINCIPAL': 'primaryExchange'
+        };
+
+        // Strategy 1: Metric pairs usually reside in div.gyY43 containers
+        // Label class: .m68ZCc
+        // Value class: .P63o9b
+
+        $('.gyY43').each((i, el) => {
+            const labelEl = $(el).find('.m68ZCc');
+            const valueEl = $(el).find('.P63o9b');
+
+            if (labelEl.length && valueEl.length) {
+                const labelText = labelEl.text().trim();
+                const valueText = valueEl.text().trim();
+
+                // Check exact match or case-insensitive
+                const key = labels[labelText] || labels[labelText.toUpperCase()];
+
+                if (key) {
+                    if (key === 'dayRange') {
+                        const parts = valueText.split('-').map(p => parseValue(p));
+                        data.dayLow = parts[0];
+                        data.dayHigh = parts[1];
+                    } else if (key === 'yearRange') {
+                        const parts = valueText.split('-').map(p => parseValue(p));
+                        data.fiftyTwoWeekLow = parts[0];
+                        data.fiftyTwoWeekHigh = parts[1];
+                    } else if (key === 'dividendYield') {
+                        data[key] = parseValue(valueText) / 100;
+                    } else {
+                        data[key] = parseValue(valueText);
+                    }
+                }
+            }
+        });
+
+        // Strategy 2: Text search fallback (if classes change)
+        if (Object.keys(data).length === 0) {
+            $('div').each((i, el) => {
+                const text = $(el).text().trim();
+                const key = labels[text] || labels[text.toUpperCase()];
+                if (key && !data[key]) {
+                    let val = $(el).next().text().trim();
+                    if (!val) val = $(el).parent().find('.P63o9b').text().trim();
+
+                    if (val) {
+                        if (key === 'dayRange') {
+                            const parts = val.split('-').map(p => parseValue(p));
+                            data.dayLow = parts[0];
+                            data.dayHigh = parts[1];
+                        } else if (key === 'dividendYield') {
+                            data[key] = parseValue(val) / 100;
+                        } else {
+                            data[key] = parseValue(val);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Also try to scrape the price if available
+        const currentPriceText = $('.YMlKec.fxKbKc').first().text();
+        if (currentPriceText) {
+            data.currentPrice = parseValue(currentPriceText);
+        }
+
+        res.json(data);
+    } catch (error) {
+        console.error('Google Finance Scraping Error:', error);
+        res.status(500).json({});
     }
 });
 

@@ -347,7 +347,7 @@ export const generateMockStockData = (symbol: string): StockData => {
     fiftyTwoWeekLow: price * 0.8,
     fiftyTwoWeekHigh: price * 1.2,
     dividendYield: 0.025,
-    avgVolume: 25000000,
+    avgVolume: "25000000",
     beta: 1.1,
     eps: 4.5,
     exDividendDate: "2024-05-15",
@@ -357,56 +357,72 @@ export const generateMockStockData = (symbol: string): StockData => {
 
 export const fetchStockData = async (query: string): Promise<StockData> => {
   try {
-    // UPDATED: Use backend proxy to fetch Yahoo data directly
-    const res = await fetch(`/api/quote-summary/${query}`);
-    if (!res.ok) throw new Error("API Offline");
-    const json = await res.json();
-    console.log("Yahoo Data Received for", query, ":", json); // Debug info
-    const r = json.quoteSummary?.result?.[0];
+    // 1. Fetch Yahoo Data (Base)
+    const resYahoo = await fetch(`/api/quote-summary/${query}`);
+    let yahooData: any = {};
+    if (resYahoo.ok) {
+      const json = await resYahoo.json();
+      yahooData = json.quoteSummary?.result?.[0] || {};
+    }
 
-    if (!r) {
-      console.warn('No Yahoo data result for', query);
+    // 2. Fetch Google Finance Data (Priority)
+    // Heuristic: If exchange is known from Yahoo search, strictly use it. Otherwise rely on backend default.
+    let googleQuery = query;
+    if (yahooData.price?.exchangeName === 'NasdaqGS') googleQuery = `${query}:NASDAQ`;
+    if (yahooData.price?.exchangeName === 'NYSE') googleQuery = `${query}:NYSE`;
+
+    const resGoogle = await fetch(`/api/google-finance/${googleQuery}`);
+    let googleData: any = {};
+    if (resGoogle.ok) {
+      googleData = await resGoogle.json();
+      console.log("Google Finance Data for", googleQuery, ":", googleData);
+    }
+
+    // Fallback if no Yahoo data
+    if (Object.keys(yahooData).length === 0 && Object.keys(googleData).length === 0) {
       return generateMockStockData(query);
     }
 
-    const base = generateMockStockData(query);
-    const p = r.price || {};
-    const sd = r.summaryDetail || {};
-    const ks = r.defaultKeyStatistics || {};
-    const fd = r.financialData || {};
+    const base = generateMockStockData(query); // Used for any missing mandatory fields
+    const p = yahooData.price || {};
+    const sd = yahooData.summaryDetail || {};
+    const ks = yahooData.defaultKeyStatistics || {};
+    const fd = yahooData.financialData || {};
 
     return {
       ...base,
       companyName: getRaw(p.longName) || getRaw(p.shortName) || base.companyName,
-      currentPrice: getRaw(p.regularMarketPrice) || base.currentPrice,
+      currentPrice: googleData.currentPrice || getRaw(p.regularMarketPrice) || base.currentPrice,
       currency: getRaw(p.currency) || 'USD',
       dayChangePercent: (getRaw(p.regularMarketChangePercent) * 100) || base.dayChangePercent,
-      marketCap: getRaw(p.marketCap) || getRaw(sd.marketCap) || base.marketCap,
+
+      // Google Finance Overrides (as requested)
+      previousClose: googleData.previousClose || getRaw(sd.previousClose) || getRaw(p.regularMarketPreviousClose),
+      dayLow: googleData.dayLow || getRaw(sd.dayLow) || getRaw(p.regularMarketDayLow),
+      dayHigh: googleData.dayHigh || getRaw(sd.dayHigh) || getRaw(p.regularMarketDayHigh),
+      fiftyTwoWeekLow: googleData.fiftyTwoWeekLow || getRaw(sd.fiftyTwoWeekLow),
+      fiftyTwoWeekHigh: googleData.fiftyTwoWeekHigh || getRaw(sd.fiftyTwoWeekHigh),
+      marketCap: googleData.marketCap || getRaw(p.marketCap) || getRaw(sd.marketCap) || base.marketCap,
+      avgVolume: googleData.avgVolume ? String(googleData.avgVolume) : (getRaw(sd.averageVolume) || getRaw(p.averageDailyVolume10Day)),
+      trailingPE: googleData.peRatio || getRaw(sd.trailingPE) || getRaw(fd.trailingPE) || base.trailingPE,
+      dividendYield: googleData.dividendYield !== undefined ? googleData.dividendYield : (getRaw(sd.dividendYield)),
+      exchange: googleData.primaryExchange || getRaw(p.exchangeName) || getRaw(p.exchange),
+
+      // Rest from Yahoo
       enterpriseValue: getRaw(ks.enterpriseValue) || base.enterpriseValue,
-      trailingPE: getRaw(sd.trailingPE) || getRaw(fd.trailingPE) || base.trailingPE,
       forwardPE: getRaw(sd.forwardPE) || getRaw(ks.forwardPE) || base.forwardPE,
       pegRatio: getRaw(ks.pegRatio) || base.pegRatio,
       priceToSales: getRaw(sd.priceToSalesTrailing12Months) || base.priceToSales,
       priceToBook: getRaw(ks.priceToBook) || base.priceToBook,
       enterpriseValueToRevenue: getRaw(ks.enterpriseValueToRevenue) || base.enterpriseValueToRevenue,
       enterpriseValueToEbitda: getRaw(ks.enterpriseValueToEbitda) || base.enterpriseValueToEbitda,
-
-      // New Google Finance fields
-      previousClose: getRaw(sd.previousClose) || getRaw(p.regularMarketPreviousClose),
       openPrice: getRaw(sd.open) || getRaw(p.regularMarketOpen),
-      dayLow: getRaw(sd.dayLow) || getRaw(p.regularMarketDayLow),
-      dayHigh: getRaw(sd.dayHigh) || getRaw(p.regularMarketDayHigh),
-      fiftyTwoWeekLow: getRaw(sd.fiftyTwoWeekLow),
-      fiftyTwoWeekHigh: getRaw(sd.fiftyTwoWeekHigh),
-      dividendYield: getRaw(sd.dividendYield),
-      avgVolume: getRaw(sd.averageVolume) || getRaw(p.averageDailyVolume10Day),
       beta: getRaw(sd.beta) || getRaw(ks.beta),
       eps: getRaw(ks.trailingEps) || getRaw(ks.forwardEps),
       exDividendDate: getRaw(sd.exDividendDate)?.fmt,
-      exchange: getRaw(p.exchangeName) || getRaw(p.exchange),
 
-      description: getRaw(r.summaryProfile?.longBusinessSummary) || base.description,
-      logoUrl: `https://logo.clearbit.com/${getRaw(r.summaryProfile?.website)?.replace(/^https?:\/\//, '') || query + '.com'}`
+      description: getRaw(yahooData.summaryProfile?.longBusinessSummary) || base.description,
+      logoUrl: `https://logo.clearbit.com/${getRaw(yahooData.summaryProfile?.website)?.replace(/^https?:\/\//, '') || query + '.com'}`
     };
   } catch (e) {
     console.error("Fetch Data Error:", e);
