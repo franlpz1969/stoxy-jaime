@@ -264,7 +264,9 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
 
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'es-ES,es;q=0.9',
+                'Cookie': 'CONSENT=YES+Cb.20250101-00-00; SOCS=CAESHAgBEhJnd3NfMjAyMzA4MTAtMF9SQzIaAmVzIAEaBgiAo_WmBg;'
             }
         });
 
@@ -344,41 +346,75 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
             }
         });
 
-        // Strategy 2: Text search fallback (if classes change)
-        if (Object.keys(data).length === 0) {
-            $('div').each((i, el) => {
-                const text = $(el).text().trim();
-                const key = labels[text] || labels[text.toUpperCase()];
-                if (key && !data[key]) {
-                    let val = $(el).next().text().trim();
-                    if (!val) val = $(el).parent().find('.P63o9b').text().trim();
-
-                    if (val) {
-                        if (key === 'dayRange') {
-                            const parts = val.split('-').map(p => parseValue(p));
-                            data.dayLow = parts[0];
-                            data.dayHigh = parts[1];
-                        } else if (key === 'dividendYield') {
-                            data[key] = parseValue(val) / 100;
-                        } else {
-                            data[key] = parseValue(val);
-                        }
-                    }
-                }
-            });
-        }
-
-        // Also try to scrape the price if available
-        const currentPriceText = $('.YMlKec.fxKbKc').first().text();
-        if (currentPriceText) {
-            data.currentPrice = parseValue(currentPriceText);
-        }
-
-        res.json(data);
-    } catch (error) {
-        console.error('Google Finance Scraping Error:', error);
-        res.status(500).json({});
     }
+            }
+        });
+
+// Strategy 2: Text search fallback override
+// Handles nested structures like: Row > Span > [Label, Tooltip] + ValueDiv
+$('div').each((i, el) => {
+    const text = $(el).text().trim();
+    const key = labels[text] || labels[text.toUpperCase()];
+
+    if (key && !data[key]) {
+        let val = null;
+
+        // Path 1: Value is next sibling (Simple case)
+        // e.g. <div>Label</div><div>Value</div>
+        const nextEl = $(el).next();
+        if (nextEl.length && !nextEl.attr('role')) { // Avoid tooltips with role="tooltip"
+            val = nextEl.text().trim();
+        }
+
+        // Path 2: Value is sibling of parent (Google Finance with Tooltips)
+        // e.g. <span><div>Label</div><div role="tooltip">...</div></span><div class="P6K39c">Value</div>
+        if (!val || val.length > 50) { // If val is too long, it's probably a description
+            const parentNext = $(el).parent().next();
+            if (parentNext.length) {
+                val = parentNext.text().trim();
+            }
+        }
+
+        // Path 3: Explicit class search in Row
+        if (!val) {
+            const row = $(el).closest('div[class*="gy"]'); // gyY43 or gyFHrc
+            if (row.length) {
+                val = row.find('.P63o9b, .P6K39c').first().text().trim();
+            }
+        }
+
+        if (val) {
+            // Validations
+            if (val.includes('Margen entre') || val.includes('Método de')) return; // Skip descriptions
+
+            if (key === 'dayRange') {
+                const parts = val.split('-').map(p => parseValue(p));
+                data.dayLow = parts[0];
+                data.dayHigh = parts[1];
+            } else if (key === 'yearRange') {
+                const parts = val.split('-').map(p => parseValue(p));
+                data.fiftyTwoWeekLow = parts[0];
+                data.fiftyTwoWeekHigh = parts[1];
+            } else if (key === 'dividendYield') {
+                data[key] = parseValue(val) / 100;
+            } else {
+                data[key] = parseValue(val);
+            }
+        }
+    }
+});
+
+// Also try to scrape the price if available
+const currentPriceText = $('.YMlKec.fxKbKc').first().text();
+if (currentPriceText) {
+    data.currentPrice = parseValue(currentPriceText);
+}
+
+res.json(data);
+    } catch (error) {
+    console.error('Google Finance Scraping Error:', error);
+    res.status(500).json({});
+}
 });
 
 // Serve Static Files (Production/Docker)
