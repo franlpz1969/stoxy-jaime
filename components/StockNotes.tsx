@@ -19,20 +19,43 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
     const [editContent, setEditContent] = useState<{ title: string, content: string }>({ title: '', content: '' });
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Load from local storage
+    // Load from Server
     useEffect(() => {
-        const saved = localStorage.getItem(`notes_${symbol}`);
-        if (saved) {
-            setNotes(JSON.parse(saved));
-        }
+        const loadNotes = async () => {
+            try {
+                const res = await fetch(`/api/notes/${symbol}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setNotes(data);
+                }
+            } catch (e) {
+                console.error("Failed to load notes", e);
+            }
+        };
+        loadNotes();
     }, [symbol]);
 
-    // Save to local storage
-    useEffect(() => {
-        if (notes.length > 0) {
-            localStorage.setItem(`notes_${symbol}`, JSON.stringify(notes));
+    // Save Note (Create or Update)
+    const saveNote = async (note: Note) => {
+        try {
+            await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...note, symbol })
+            });
+        } catch (e) {
+            console.error("Failed to save note", e);
         }
-    }, [notes, symbol]);
+    };
+
+    // Delete Note
+    const deleteNote = async (id: string) => {
+        try {
+            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error("Failed to delete note", e);
+        }
+    };
 
     const handleCreate = () => {
         const newNote: Note = {
@@ -41,6 +64,7 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
             content: '',
             date: Date.now()
         };
+        saveNote(newNote); // Save immediately
         setNotes([newNote, ...notes]);
         setSelectedId(newNote.id);
         setEditContent({ title: newNote.title, content: newNote.content });
@@ -63,9 +87,9 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
 
     const confirmDelete = () => {
         if (!selectedId) return;
+        deleteNote(selectedId);
         const newNotes = notes.filter(n => n.id !== selectedId);
         setNotes(newNotes);
-        localStorage.setItem(`notes_${symbol}`, JSON.stringify(newNotes)); // Force save immediately
         setSelectedId(null);
         setIsEditing(false);
         setShowDeleteModal(false);
@@ -73,7 +97,13 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
 
     const handleSave = () => {
         if (!selectedId) return;
-        setNotes(notes.map(n => n.id === selectedId ? { ...n, ...editContent, date: Date.now() } : n));
+        const updatedNote = {
+            ...notes.find(n => n.id === selectedId)!,
+            ...editContent,
+            date: Date.now()
+        };
+        saveNote(updatedNote);
+        setNotes(notes.map(n => n.id === selectedId ? updatedNote : n));
         setIsEditing(false);
     };
 
@@ -97,8 +127,8 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
                         key={note.id}
                         onClick={() => !isEditing && setSelectedId(note.id)}
                         className={`p-4 rounded-xl border transition-all cursor-pointer relative min-h-[100px] flex flex-col ${selectedId === note.id
-                                ? 'bg-blue-500/10 border-blue-500/50'
-                                : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+                            ? 'bg-blue-500/10 border-blue-500/50'
+                            : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
                             }`}
                     >
                         {isEditing && selectedId === note.id ? (

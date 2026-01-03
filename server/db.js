@@ -32,6 +32,14 @@ db.exec(`
     data TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS notes (
+    id TEXT PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    title TEXT,
+    content TEXT,
+    date INTEGER
+  );
 `);
 
 export default db;

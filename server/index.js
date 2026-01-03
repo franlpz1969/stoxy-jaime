@@ -38,6 +38,8 @@ app.post('/api/portfolios', (req, res) => {
         const insert = db.prepare('INSERT OR REPLACE INTO portfolios (id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)');
         const deleteOld = db.prepare('DELETE FROM portfolios WHERE id NOT IN (' + portfolios.map(() => '?').join(',') + ')');
 
+
+
         const transaction = db.transaction((items) => {
             // Remove deleted portfolios
             if (items.length > 0) {
@@ -57,6 +59,41 @@ app.post('/api/portfolios', (req, res) => {
     } catch (error) {
         console.error('Database save error:', error);
         res.status(500).json({ error: 'Failed to save portfolios' });
+    }
+});
+
+// Notes API
+app.get('/api/notes/:symbol', (req, res) => {
+    try {
+        const { symbol } = req.params;
+        const notes = db.prepare('SELECT * FROM notes WHERE symbol = ? ORDER BY date DESC').all(symbol);
+        res.json(notes);
+    } catch (error) {
+        console.error('Error fetching notes:', error);
+        res.status(500).json({ error: 'Failed to fetch notes' });
+    }
+});
+
+app.post('/api/notes', (req, res) => {
+    try {
+        const { id, symbol, title, content, date } = req.body;
+        const stmt = db.prepare('INSERT OR REPLACE INTO notes (id, symbol, title, content, date) VALUES (?, ?, ?, ?, ?)');
+        stmt.run(id, symbol, title, content, date);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error saving note:', error);
+        res.status(500).json({ error: 'Failed to save note' });
+    }
+});
+
+app.delete('/api/notes/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting note:', error);
+        res.status(500).json({ error: 'Failed to delete note' });
     }
 });
 
