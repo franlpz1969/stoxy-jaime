@@ -218,73 +218,199 @@ app.get('/api/quote-summary/:symbol', async (req, res) => {
     try {
         const { symbol } = req.params;
 
-        // 1. Check Cache
-        const cached = db.prepare('SELECT data, updated_at FROM stock_quotes WHERE symbol = ?').get(symbol);
-        if (cached) {
-            const cacheDate = new Date(cached.updated_at).toISOString().split('T')[0];
-            const today = new Date().toISOString().split('T')[0];
+        // --- 1. Daily Data Handling (Price, Summary, etc.) ---
+        let mainData = null;
+        let mainDataCached = false;
 
-            if (cacheDate === today) {
-                console.log(`Serving cached quote summary for ${symbol}`);
-                return res.json(JSON.parse(cached.data));
+        const cachedDaily = db.prepare('SELECT data, updated_at FROM stock_quotes WHERE symbol = ?').get(symbol);
+
+        // Check if daily cache is from today
+        const isDailyFresh = cachedDaily && new Date(cachedDaily.updated_at).toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+
+        if (isDailyFresh && cachedDaily.data) {
+            console.log(`Serving cached quote summary for ${symbol}`);
+            mainData = JSON.parse(cachedDaily.data);
+            mainDataCached = true;
+        } else {
+            // Fetch fresh daily data
+            if (!yahooSession.crumb) await refreshYahooSession();
+
+            // Exclude incomeStatementHistory from daily fetch to save daily bandwidth.
+            // We only need: price, summaryDetail, summaryProfile, defaultKeyStatistics, financialData, recommendationTrend, earningsEstimate, revenueEstimate, earningsHistory, earningsTrend
+            const dailyModules = 'price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend,earningsEstimate,revenueEstimate,earningsHistory,earningsTrend';
+
+            let url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${dailyModules}&crumb=${yahooSession.crumb}`;
+            let fetchOptions = {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Cookie': yahooSession.cookie
+                }
+            };
+
+            let response = await fetch(url, fetchOptions);
+
+            if (response.status === 401) {
+                console.log('Got 401 from Yahoo, retrying with new session...');
+                await refreshYahooSession();
+                url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${dailyModules}&crumb=${yahooSession.crumb}`;
+                fetchOptions.headers.Cookie = yahooSession.cookie;
+                response = await fetch(url, fetchOptions);
+            }
+
+            if (!response.ok) {
+                console.error(`Yahoo API error for daily data: ${response.status}`);
+                // Fallback to stale cache if available
+                if (cachedDaily) {
+                    console.log(`Serving STALE cached quote summary for ${symbol}`);
+                    mainData = JSON.parse(cachedDaily.data);
+                } else {
+                    return res.status(response.status).json({});
+                }
+            } else {
+                mainData = await response.json();
+
+                // Cache Daily Data (without income statement for now)
+                if (mainData.quoteSummary?.result) {
+                    try {
+                        db.prepare(`
+                            INSERT INTO stock_quotes (symbol, data, updated_at) 
+                            VALUES (?, ?, datetime('now')) 
+                            ON CONFLICT(symbol) DO UPDATE SET 
+                                data = excluded.data, 
+                                updated_at = datetime('now')
+                        `).run(symbol, JSON.stringify(mainData));
+                        console.log(`Cached daily quote summary for ${symbol}`);
+                    } catch (dbError) {
+                        console.error('Failed to cache quote summary:', dbError);
+                    }
+                }
             }
         }
 
-        // 2. Fetch Fresh Data
-        if (!yahooSession.crumb) {
-            await refreshYahooSession();
-        }
+        // --- 2. Income Statement Handling (Long-term Cache) ---
+        let incomeData = null;
+        const cachedIncome = db.prepare('SELECT data, updated_at FROM income_statements WHERE symbol = ?').get(symbol);
 
-        const modules = 'price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend,earningsEstimate,revenueEstimate,earningsHistory,earningsTrend';
-        let url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${yahooSession.crumb}`;
+        // Cache is valid for 7 days
+        const incomeAgeDays = cachedIncome ? (new Date() - new Date(cachedIncome.updated_at)) / (1000 * 60 * 60 * 24) : 999;
 
-        const fetchOptions = {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Cookie': yahooSession.cookie
+        if (incomeAgeDays < 7 && cachedIncome?.data) {
+            console.log(`Serving cached income statement for ${symbol} (Age: ${incomeAgeDays.toFixed(1)} days)`);
+            incomeData = JSON.parse(cachedIncome.data);
+        } else {
+            // Fetch fresh income data
+            if (!yahooSession.crumb) await refreshYahooSession();
+
+            console.log(`Fetching fresh income statement for ${symbol}...`);
+            const incomeModules = 'incomeStatementHistory';
+            let url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${incomeModules}&crumb=${yahooSession.crumb}`;
+            let fetchOptions = {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Cookie': yahooSession.cookie
+                }
+            };
+
+            let response = await fetch(url, fetchOptions);
+
+            if (response.status === 401) {
+                await refreshYahooSession();
+                url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${incomeModules}&crumb=${yahooSession.crumb}`;
+                fetchOptions.headers.Cookie = yahooSession.cookie;
+                response = await fetch(url, fetchOptions);
             }
-        };
 
-        let response = await fetch(url, fetchOptions);
-
-        if (response.status === 401) {
-            console.log('Got 401 from Yahoo, retrying with new session...');
-            await refreshYahooSession();
-            url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${yahooSession.crumb}`;
-            fetchOptions.headers.Cookie = yahooSession.cookie;
-            response = await fetch(url, fetchOptions);
-        }
-
-        if (!response.ok) {
-            console.error(`Yahoo API error: ${response.status}`);
-            return res.status(response.status).json({});
-        }
-
-        const data = await response.json();
-
-        // 3. Cache Data
-        if (data.quoteSummary?.result) {
-            try {
-                db.prepare(`
-                    INSERT INTO stock_quotes (symbol, data, updated_at) 
-                    VALUES (?, ?, datetime('now')) 
-                    ON CONFLICT(symbol) DO UPDATE SET 
-                        data = excluded.data, 
-                        updated_at = datetime('now')
-                `).run(symbol, JSON.stringify(data));
-                console.log(`Cached quote summary for ${symbol}`);
-            } catch (dbError) {
-                console.error('Failed to cache quote summary:', dbError);
+            if (response.ok) {
+                const json = await response.json();
+                if (json.quoteSummary?.result) {
+                    incomeData = json;
+                    // Cache Income
+                    try {
+                        db.prepare(`
+                            INSERT INTO income_statements (symbol, data, updated_at) 
+                            VALUES (?, ?, datetime('now')) 
+                            ON CONFLICT(symbol) DO UPDATE SET data = excluded.data, updated_at = datetime('now')
+                        `).run(symbol, JSON.stringify(json));
+                        console.log(`Cached income statement for ${symbol}`);
+                    } catch (e) { console.error("Failed to cache income statement", e); }
+                }
+            } else {
+                console.error(`Failed to fetch income statement: ${response.status}`);
+                // Fallback to old cache if exists
+                if (cachedIncome) incomeData = JSON.parse(cachedIncome.data);
             }
         }
 
-        res.json(data);
+        // --- 3. Merge and Return ---
+        // If mainData failed completely (no fresh, no stale), we returned earlier.
+        if (mainData && mainData.quoteSummary && mainData.quoteSummary.result) {
+            // Merge income statement into the main result if available
+            if (incomeData && incomeData.quoteSummary && incomeData.quoteSummary.result) {
+                const mainResult = mainData.quoteSummary.result[0];
+                const incomeResult = incomeData.quoteSummary.result[0];
+
+                // Merge properties from incomeResult to mainResult
+                Object.assign(mainResult, incomeResult);
+            }
+            res.json(mainData);
+        } else {
+            // Should be rare if fallback logic works
+            res.status(500).json({ error: "No data available" });
+        }
     } catch (error) {
         console.error('Quote summary proxy error:', error);
         res.status(500).json({ error: 'Failed to fetch quote summary' });
     }
 });
 
+// Financial Modeling Prep - Product Segment Revenue (for detailed Sankey charts)
+// Get free API key from: https://site.financialmodelingprep.com/developer/docs
+const FMP_API_KEY = process.env.FMP_API_KEY || '';
+
+app.get('/api/product-segments/:symbol', async (req, res) => {
+    const { symbol } = req.params;
+
+    if (!FMP_API_KEY) {
+        return res.status(503).json({ error: 'FMP API key not configured', segments: [] });
+    }
+
+    try {
+        // Check cache first (7 days for segment data)
+        const cached = db.prepare(`
+            SELECT data, updated_at FROM income_statements 
+            WHERE symbol = ? AND updated_at > datetime('now', '-7 days')
+        `).get(`${symbol}_segments`);
+
+        if (cached) {
+            console.log(`Serving cached product segments for ${symbol}`);
+            return res.json(JSON.parse(cached.data));
+        }
+
+        // Fetch from FMP
+        const url = `https://financialmodelingprep.com/api/v4/revenue-product-segmentation?symbol=${symbol}&structure=flat&period=annual&apikey=${FMP_API_KEY}`;
+        console.log(`Fetching product segments for ${symbol} from FMP...`);
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`FMP API error: ${response.status}`);
+            return res.json({ segments: [] });
+        }
+
+        const data = await response.json();
+
+        // Cache the result
+        db.prepare(`
+            INSERT INTO income_statements (symbol, data, updated_at) 
+            VALUES (?, ?, datetime('now')) 
+            ON CONFLICT(symbol) DO UPDATE SET data = excluded.data, updated_at = datetime('now')
+        `).run(`${symbol}_segments`, JSON.stringify(data));
+
+        res.json(data);
+    } catch (error) {
+        console.error('FMP product segments error:', error);
+        res.json({ segments: [] });
+    }
+});
 
 // Google News RSS (More relevant search-based results)
 app.get('/api/news/:symbol', async (req, res) => {

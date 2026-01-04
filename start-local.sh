@@ -6,7 +6,7 @@ lsof -ti:3001 | xargs kill -9 2>/dev/null
 
 # Start Backend
 echo "Starting Backend on port 3001..."
-PORT=3001 npm run server &
+FMP_API_KEY=cXjaiMrFSXvCALbdRKQlh3cMO4934mm7 PORT=3001 npm run server &
 BACKEND_PID=$!
 
 # Wait a moment for backend to initialize

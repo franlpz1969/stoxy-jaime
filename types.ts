@@ -128,6 +128,19 @@ export interface EarningsHistory {
   surprise: number;
 }
 
+export interface IncomeStatement {
+  totalRevenue: number;
+  costOfRevenue: number;
+  grossProfit: number;
+  operatingExpenses: number;
+  operatingIncome: number;
+  interestExpense?: number;
+  incomeBeforeTax: number;
+  incomeTaxExpense: number;
+  netIncome: number;
+  date: string;
+}
+
 export interface AnalysisData {
   priceTarget?: { low: number; high: number; average: number };
   recommendationTrend?: RecommendationTrend[];
@@ -136,6 +149,7 @@ export interface AnalysisData {
   earningsHistory?: EarningsHistory[];
   revenueVsEarnings?: { period: string; revenue: number; earnings: number }[];
   analystRating?: number;
+  incomeStatement?: IncomeStatement;
 }
 
 export type TransactionType = 'BUY' | 'SELL';

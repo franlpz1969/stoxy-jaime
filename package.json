@@ -11,13 +11,18 @@
   },
   "dependencies": {
     "@google/genai": "^1.32.0",
+    "@types/d3": "^7.4.3",
+    "@types/d3-sankey": "^0.12.5",
     "better-sqlite3": "^12.5.0",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
+    "d3": "^7.9.0",
+    "d3-sankey": "^0.12.3",
     "express": "^5.2.1",
     "lucide-react": "^0.559.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-google-charts": "^5.2.1",
     "recharts": "^3.5.1"
   },
   "devDependencies": {

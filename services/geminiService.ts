@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { StockData, RecommendationTrend, AnalysisData, EstimateRow, EarningsHistory, InvestmentRecommendation } from "../types";
+import { StockData, RecommendationTrend, AnalysisData, EstimateRow, EarningsHistory, InvestmentRecommendation, IncomeStatement } from "../types";
 
 // Safe initialization to prevent crash if API key is missing
 const apiKey = process.env.API_KEY || "dummy_key_for_dev";
@@ -446,7 +446,7 @@ const mapYahooDataToStockData = (symbol: string, modules: any, priceData: any): 
     currentPrice: getRaw(price.regularMarketPrice) || priceData?.price || 0,
     currency: getRaw(price.currency) || 'USD',
     dayChangePercent: dayChangePercent || priceData?.change || 0,
-    logoUrl: `https://logo.clearbit.com/${getRaw(summaryProfile.website)?.replace(/^https?:\/\//, '') || symbol + '.com'}`,
+    logoUrl: `https://logo.clearbit.com/${getRaw(summaryProfile.website)?.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] || symbol + '.com'}`,
     marketStatus: getRaw(price.marketState) === 'REGULAR' ? 'open' : 'closed',
     description: getRaw(summaryProfile.longBusinessSummary) || "No description available.",
     sector: getRaw(summaryProfile.sector),
@@ -577,13 +577,14 @@ export const fetchStockData = async (query: string): Promise<StockData> => {
     }
 
     // Finnhub fallback
-    if (!stockData.currentPrice && !googleData?.currentPrice) {
-      const livePrice = await fetchFinnhubQuote(stockData.symbol);
-      if (livePrice) {
-        stockData.currentPrice = livePrice.price;
-        stockData.dayChangePercent = livePrice.change;
-      }
-    }
+    // Finnhub fallback
+    // if (!stockData.currentPrice && !googleData?.currentPrice) {
+    //   const livePrice = await fetchFinnhubQuote(stockData.symbol);
+    //   if (livePrice) {
+    //     stockData.currentPrice = livePrice.price;
+    //     stockData.dayChangePercent = livePrice.change;
+    //   }
+    // }
 
     return stockData;
   } catch (error: any) {
@@ -668,6 +669,23 @@ export const fetchAnalysisData = async (symbol: string): Promise<AnalysisData | 
 
     const analystRating = getRaw(result.financialData?.recommendationMean);
 
+    let incomeStatement: IncomeStatement | undefined;
+    if (result.incomeStatementHistory?.incomeStatementHistory && result.incomeStatementHistory.incomeStatementHistory.length > 0) {
+      const latest = result.incomeStatementHistory.incomeStatementHistory[0];
+      incomeStatement = {
+        totalRevenue: getRaw(latest.totalRevenue),
+        costOfRevenue: getRaw(latest.costOfRevenue),
+        grossProfit: getRaw(latest.grossProfit),
+        operatingExpenses: getRaw(latest.totalOperatingExpenses), // totalOperatingExpenses often equals sum of R&D + SG&A
+        operatingIncome: getRaw(latest.operatingIncome),
+        interestExpense: getRaw(latest.interestExpense),
+        incomeBeforeTax: getRaw(latest.incomeBeforeTax),
+        incomeTaxExpense: getRaw(latest.incomeTaxExpense),
+        netIncome: getRaw(latest.netIncome),
+        date: getRaw(latest.endDate) // UNIX timestamp usually
+      };
+    }
+
     return {
       priceTarget,
       recommendationTrend,
@@ -675,7 +693,8 @@ export const fetchAnalysisData = async (symbol: string): Promise<AnalysisData | 
       earningsEstimate: mapEstimate(result.earningsEstimate?.earningsEst),
       revenueEstimate: mapEstimate(result.revenueEstimate?.revenueEst),
       earningsHistory: mapHistory(result.earningsHistory?.history),
-      revenueVsEarnings: revVsEarn.length > 0 ? revVsEarn : undefined
+      revenueVsEarnings: revVsEarn.length > 0 ? revVsEarn : undefined,
+      incomeStatement
     };
 
   } catch (error) {
@@ -695,20 +714,31 @@ export const fetchStockHistory = async (symbol: string, range: string): Promise<
 };
 
 
+// Prioritize backend proxy which handles Yahoo sessions and caching
 export const fetchStockPrice = async (symbol: string): Promise<{ price: number; change: number } | null> => {
-  const finnhubData = await fetchFinnhubQuote(symbol);
-  if (finnhubData) return finnhubData;
-
+  // 1. Try Backend Proxy (Yahoo)
   try {
-    const data = await fetchYahoo(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
-    const meta = data.chart?.result?.[0]?.meta;
-    if (meta && meta.regularMarketPrice) {
-      const price = meta.regularMarketPrice;
-      const prevClose = meta.chartPreviousClose || meta.previousClose;
-      const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
-      return { price, change };
+    const res = await fetch(`/api/quote-summary/${symbol}`);
+    if (res.ok) {
+      const data = await res.json();
+      const priceObj = data.quoteSummary?.result?.[0]?.price;
+      if (priceObj && priceObj.regularMarketPrice) {
+        const price = getRaw(priceObj.regularMarketPrice);
+        const change = getRaw(priceObj.regularMarketChangePercent) * 100;
+        return { price, change };
+      }
     }
-  } catch (e) { }
+  } catch (e) {
+    console.warn(`Backend price fetch failed for ${symbol}:`, e);
+  }
+
+  // 2. Fallback to Finnhub (Free Tier - prone to 429)
+  // try {
+  //   const finnhubData = await fetchFinnhubQuote(symbol);
+  //   if (finnhubData) return finnhubData;
+  // } catch (e) { console.warn('Finnhub failed:', e); }
+
+  // 3. Fallback to Mock
   const mock = generateMockStockData(symbol);
   return { price: mock.currentPrice, change: mock.dayChangePercent };
 };

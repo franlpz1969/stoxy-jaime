@@ -27,7 +27,14 @@ const EXCHANGE_RATES: Record<string, number> = {
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('portfolio');
   const [language, setLanguage] = useState('en');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    // Initialize from localStorage or default to dark
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('stoxy-theme');
+      return saved === 'light' ? 'light' : 'dark';
+    }
+    return 'dark';
+  });
   const [displayCurrency, setDisplayCurrency] = useState('USD');
   const [user, setUser] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -36,6 +43,16 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Sync theme with document and localStorage
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('stoxy-theme', theme);
+  }, [theme]);
 
   // --- PORTFOLIO 1: GLOBAL INSTITUTIONAL CORE (~$10M) ---
   const globalCorePositions: PortfolioPosition[] = [
