@@ -10,7 +10,7 @@ export interface StockData {
   description?: string;
   sector?: string;
   country?: string;
-  marketCap?: number;
+  marketCap?: string | number;
   peRatio?: number;
   eps?: number;
   fiftyTwoWeekHigh?: number;

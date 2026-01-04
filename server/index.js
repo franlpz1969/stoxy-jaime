@@ -349,10 +349,16 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
     try {
         const { ticker } = req.params;
 
-        // Basic fallback heuristic for ticker format if needed
+        // Heuristic for ticker format (Yahoo suffix -> Google Exchange)
         let queryTicker = ticker;
         if (!queryTicker.includes(':')) {
-            queryTicker = `${ticker}:NASDAQ`;
+            if (queryTicker.endsWith('.MC')) queryTicker = `${queryTicker.replace('.MC', '')}:BME`;
+            else if (queryTicker.endsWith('.PA')) queryTicker = `${queryTicker.replace('.PA', '')}:EPA`;
+            else if (queryTicker.endsWith('.DE')) queryTicker = `${queryTicker.replace('.DE', '')}:FRA`;
+            else if (queryTicker.endsWith('.L')) queryTicker = `${queryTicker.replace('.L', '')}:LON`;
+            else if (queryTicker.endsWith('.AM')) queryTicker = `${queryTicker.replace('.AM', '')}:AMS`;
+            else if (queryTicker.endsWith('.TO')) queryTicker = `${queryTicker.replace('.TO', '')}:TSE`;
+            else queryTicker = `${ticker}:NASDAQ`;
         }
 
         const url = `https://www.google.com/finance/quote/${queryTicker}?hl=es`;
@@ -377,13 +383,29 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
 
         const parseValue = (text) => {
             if (!text) return null;
-            let clean = text.replace(/USD|EUR|\$|€/g, '').trim();
+            let clean = text.replace(/USD|EUR|\$|€|GBP/g, '').trim();
 
             let multiplier = 1;
-            if (clean.includes(' B')) { multiplier = 1e9; clean = clean.replace(' B', ''); }
-            else if (clean.includes(' M')) { multiplier = 1e6; clean = clean.replace(' M', ''); }
-            else if (clean.includes(' k')) { multiplier = 1e3; clean = clean.replace(' k', ''); }
-            else if (clean.includes(' T')) { multiplier = 1e12; clean = clean.replace(' T', ''); }
+
+            // Check suffixes (case insensitive, optional space)
+            // In Spanish Short Scale context (if accepted) or Long Scale?
+            // Google Finance ES for Apple shows "B" (Billón = 10^12)
+            // Standard SI: T = 10^12, G/B = 10^9.
+            // But GF ES seems to use B for Billón (10^12). M for Millón (10^6).
+
+            if (/[0-9\s](T|t)$/.test(clean)) { multiplier = 1e12; clean = clean.replace(/(T|t)$/, ''); }
+            else if (/[0-9\s](B|b)$/.test(clean)) { multiplier = 1e9; clean = clean.replace(/(B|b)$/, ''); } // B = Billion (10^9) in most Finance contexts including some ES
+            else if (/[0-9\s](M|m)$/.test(clean)) { multiplier = 1e6; clean = clean.replace(/(M|m)$/, ''); }
+            else if (/[0-9\s](K|k)$/.test(clean)) { multiplier = 1e3; clean = clean.replace(/(K|k)$/, ''); }
+
+            // Handle European number format: remove dots (thousands), replace comma with dot (decimal)
+            // But be careful if source is English format (e.g. 1,234.56 or 1.23M)
+            // Google Finance 'es' should be 4,11 T -> 4,11
+            // But if it is 1.234,56 -> 1234.56
+
+            // If the string contains a comma but NO dots, it's likely decimal comma (common in ES)
+            // If it contains dots but NO comma, it might be decimal dot (common in EN) or thousands dot (ES)
+            // To be safe for 'es' scraping: assume Comma is Decimal.
 
             clean = clean.replace(/\./g, '').replace(',', '.').replace(/%/g, '').trim();
             const val = parseFloat(clean);

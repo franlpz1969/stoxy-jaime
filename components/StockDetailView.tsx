@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2, ExternalLink } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid, Legend, LabelList } from 'recharts';
 import { StockData, AnalysisData } from '../types';
 import { fetchAnalysisData, fetchStockHistory, fetchStockData, fetchCompanyNews } from '../services/geminiService';
 import { StockNotes } from './StockNotes';
@@ -275,9 +275,9 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                         <div className="px-6 space-y-6">
                             <h3 className="text-white font-bold text-lg hidden">Key Statistics</h3>
                             <div className="border-t border-zinc-900">
-                                <TableRow labelEs="CIERRE ANTERIOR" labelEn="Previous Close" value={stock.previousClose?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + stock.currency} />
-                                <TableRow labelEs="INTERVALO DIARIO" labelEn="Day Range" value={stock.dayLow && stock.dayHigh ? `${stock.dayLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.dayHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
-                                <TableRow labelEs="INTERVALO ANUAL" labelEn="Year Range" value={stock.fiftyTwoWeekLow && stock.fiftyTwoWeekHigh ? `${stock.fiftyTwoWeekLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.fiftyTwoWeekHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                <TableRow labelEs="CIERRE ANTERIOR" labelEn="Previous Close" value={stock.previousClose !== undefined ? stock.previousClose.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + stock.currency : 'N/A'} />
+                                <TableRow labelEs="INTERVALO DIARIO" labelEn="Day Range" value={stock.dayLow !== undefined && stock.dayHigh !== undefined ? `${stock.dayLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.dayHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
+                                <TableRow labelEs="INTERVALO ANUAL" labelEn="Year Range" value={stock.fiftyTwoWeekLow !== undefined && stock.fiftyTwoWeekHigh !== undefined ? `${stock.fiftyTwoWeekLow.toLocaleString(undefined, { minimumFractionDigits: 2 })} - ${stock.fiftyTwoWeekHigh.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : 'N/A'} />
                                 <TableRow labelEs="CAP. BURSÁTIL" labelEn="Market Cap" value={formatNumber(stock.marketCap) + ' ' + stock.currency} />
                                 <TableRow labelEs="VOLUMEN MEDIO" labelEn="Avg Volume" value={formatNumber(stock.avgVolume)} />
                                 <TableRow labelEs="RELACIÓN PRECIO-BENEFICIO" labelEn="P/E Ratio" value={stock.trailingPE?.toFixed(2)} />
@@ -292,15 +292,70 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                                 <>
                                     <div className="bg-[#1C1C1E] rounded-2xl p-6 border border-zinc-800">
                                         <h3 className="text-white font-bold mb-4 uppercase text-xs tracking-widest text-zinc-500">Recommendation trend</h3>
-                                        <div className="h-48">
+                                        <div className="h-72">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={analysis.recommendationTrend} layout="vertical">
-                                                    <XAxis type="number" hide />
-                                                    <YAxis dataKey="period" type="category" tick={{ fill: '#71717a', fontSize: 10 }} width={30} axisLine={false} />
-                                                    <Bar dataKey="strongBuy" stackId="a" fill="#22c55e" />
-                                                    <Bar dataKey="buy" stackId="a" fill="#84cc16" />
-                                                    <Bar dataKey="hold" stackId="a" fill="#eab308" />
-                                                    <Bar dataKey="sell" stackId="a" fill="#ef4444" />
+                                                <BarChart data={analysis.recommendationTrend} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                                                    <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 12, fontWeight: 500, dy: 10 }} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 12 }} />
+                                                    <Tooltip
+                                                        cursor={{ fill: '#27272a', opacity: 0.4 }}
+                                                        content={({ active, payload, label }) => {
+                                                            if (active && payload && payload.length) {
+                                                                return (
+                                                                    <div className="bg-[#09090b] border border-zinc-800 p-3 rounded-xl shadow-xl">
+                                                                        <p className="text-zinc-400 font-bold mb-2 capitalize text-xs">{label}</p>
+                                                                        <div className="space-y-1">
+                                                                            {payload.map((entry: any, index: number) => (
+                                                                                <div key={index} className="flex items-center justify-between text-xs gap-4">
+                                                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                                                                                    <span className="text-zinc-300 capitalize">{entry.name}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        }}
+                                                    />
+                                                    <Legend
+                                                        layout="vertical"
+                                                        verticalAlign="middle"
+                                                        align="right"
+                                                        iconType="square"
+                                                        iconSize={10}
+                                                        wrapperStyle={{ paddingLeft: '20px', fontSize: '12px', fontWeight: 500, color: '#a1a1aa' }}
+                                                    />
+                                                    {/* Reverse order of stack to match image: Strong Buy on top (if mapped correctly) or bottom? 
+                                                        Standard stacked bar usually builds from 0 up. 
+                                                        Image has Green on Top, Red on bottom? No, actually typically Strong Buy (Green) is effectively distinct.
+                                                        Let's look at image: Green (Strong Buy) is at the TOP of the bar? Or Bottom?
+                                                        Usually "Strong Buy" is the best rating. In the image:
+                                                        Top Green (Strong Buy 5)
+                                                        Light Green (Buy 24)
+                                                        Yellow (Hold 15)
+                                                        Orange (Sell)
+                                                        Red (Strong Sell)
+                                                        So Strong Buy is topmost. 
+                                                        Recharts stacks in order of definition. Last one defined is on TOP. 
+                                                        So we should define Strong Sell first, then Sell, Hold, Buy, Strong Buy.
+                                                    */}
+                                                    <Bar dataKey="strongSell" name="Strong Sell" stackId="a" fill="#ef4444" radius={[0, 0, 4, 4]}>
+                                                        <LabelList dataKey="strongSell" position="center" fill="white" fontSize={10} fontWeight="bold" formatter={(v: number) => v > 0 ? v : ''} />
+                                                    </Bar>
+                                                    <Bar dataKey="sell" name="Sell" stackId="a" fill="#f97316">
+                                                        <LabelList dataKey="sell" position="center" fill="white" fontSize={10} fontWeight="bold" formatter={(v: number) => v > 0 ? v : ''} />
+                                                    </Bar>
+                                                    <Bar dataKey="hold" name="Hold" stackId="a" fill="#eab308">
+                                                        <LabelList dataKey="hold" position="center" fill="white" fontSize={10} fontWeight="bold" formatter={(v: number) => v > 0 ? v : ''} />
+                                                    </Bar>
+                                                    <Bar dataKey="buy" name="Buy" stackId="a" fill="#84cc16">
+                                                        <LabelList dataKey="buy" position="center" fill="white" fontSize={10} fontWeight="bold" formatter={(v: number) => v > 0 ? v : ''} />
+                                                    </Bar>
+                                                    <Bar dataKey="strongBuy" name="Strong Buy" stackId="a" fill="#22c55e" radius={[4, 4, 0, 0]}>
+                                                        <LabelList dataKey="strongBuy" position="center" fill="white" fontSize={10} fontWeight="bold" formatter={(v: number) => v > 0 ? v : ''} />
+                                                    </Bar>
                                                 </BarChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -314,11 +369,57 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                                     </div>
                                     <div className="bg-[#1C1C1E] rounded-2xl p-6 border border-zinc-800">
                                         <h3 className="text-white font-bold mb-4 uppercase text-xs tracking-widest text-zinc-500">Recommendation Rating</h3>
-                                        <div className="h-1.5 w-full bg-zinc-800 rounded-full flex overflow-hidden">
-                                            <div className="h-full bg-green-500" style={{ width: analysis.analystRating ? `${(5 - analysis.analystRating) * 20}%` : '0%' }}></div>
+                                        <div className="relative pt-6 pb-2">
+                                            <div className="h-1.5 w-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
+                                            {/* Pointer */}
+                                            <div
+                                                className="absolute top-0 flex flex-col items-center transform -translate-x-1/2 transition-all duration-500"
+                                                style={{ left: analysis.analystRating ? `${(analysis.analystRating - 1) / 4 * 100}%` : '50%' }}
+                                            >
+                                                <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded mb-1 shadow-lg border border-blue-400">
+                                                    {analysis.analystRating?.toFixed(1) || 'N/A'}
+                                                </div>
+                                                <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-[#1C1C1E]"></div>
+                                            </div>
+
+                                            <div className="flex justify-between mt-4 text-xs font-bold text-zinc-500 uppercase">
+                                                <span className="text-green-500">1 Buy</span>
+                                                <span className="text-yellow-500">3 Hold</span>
+                                                <span className="text-red-500">5 Sell</span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between mt-2 text-[10px] font-bold uppercase text-zinc-600">
-                                            <span>Strong Buy</span><span>Hold</span><span>Sell</span>
+                                    </div>
+                                    <div className="bg-[#1C1C1E] rounded-2xl p-6 border border-zinc-800">
+                                        <h3 className="text-white font-bold mb-8 uppercase text-xs tracking-widest text-zinc-500">Price targets</h3>
+                                        <div className="relative h-12">
+                                            {/* Range Bar */}
+                                            <div className="absolute top-1/2 left-0 right-0 h-1 bg-zinc-800 rounded-full -translate-y-1/2"></div>
+                                            <div className="absolute top-1/2 h-1 bg-blue-900/50 rounded-full -translate-y-1/2"
+                                                style={{
+                                                    left: `${((analysis.priceTarget?.low || 0) / (analysis.priceTarget?.high || 1)) * 20}%`,
+                                                    right: `${100 - ((analysis.priceTarget?.high || 0) / (analysis.priceTarget?.high || 1)) * 80}%`
+                                                }}
+                                            ></div>
+
+                                            {/* Low */}
+                                            <div className="absolute top-1/2 left-[10%] -translate-y-1/2 flex flex-col items-center group">
+                                                <div className="w-3 h-3 bg-[#1C1C1E] border-2 border-red-500 rounded-full z-10 mb-2"></div>
+                                                <span className="text-red-500 text-xs font-bold whitespace-nowrap opacity-60 group-hover:opacity-100 transition-opacity absolute top-6">Low {analysis.priceTarget?.low?.toFixed(2)}</span>
+                                            </div>
+
+                                            {/* High */}
+                                            <div className="absolute top-1/2 right-[10%] -translate-y-1/2 flex flex-col items-center group">
+                                                <div className="w-3 h-3 bg-[#1C1C1E] border-2 border-green-500 rounded-full z-10 mb-2"></div>
+                                                <span className="text-green-500 text-xs font-bold whitespace-nowrap opacity-60 group-hover:opacity-100 transition-opacity absolute top-6">High {analysis.priceTarget?.high?.toFixed(2)}</span>
+                                            </div>
+
+                                            {/* Average */}
+                                            <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+                                                <div className="bg-blue-500 text-white text-sm font-bold px-3 py-1 rounded shadow-lg mb-1">
+                                                    {analysis.priceTarget?.average?.toFixed(2)}
+                                                </div>
+                                                <div className="w-4 h-4 bg-blue-500 rounded-full border-4 border-[#1C1C1E]"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </>
