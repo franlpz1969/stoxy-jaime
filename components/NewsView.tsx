@@ -54,6 +54,16 @@ const NewsView = () => {
         }
     };
 
+    const [fontSize, setFontSize] = useState(1); // 0: Small, 1: Medium, 2: Large
+
+    const fontConfig = [
+        { title: 'text-base', body: 'text-xs', tag: 'text-[10px]' },     // Small
+        { title: 'text-lg', body: 'text-sm', tag: 'text-xs' },           // Medium (Default)
+        { title: 'text-2xl', body: 'text-base', tag: 'text-sm' }         // Large
+    ];
+
+    const currentFont = fontConfig[fontSize];
+
     return (
         <div className="p-4 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-screen">
 
@@ -61,19 +71,38 @@ const NewsView = () => {
             <div className="flex flex-col gap-4 mb-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Intelligence</h1>
+
+                    {/* Font Size Controls */}
+                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-900 p-1 rounded-lg border border-gray-200 dark:border-zinc-800">
+                        <button
+                            onClick={() => setFontSize(Math.max(0, fontSize - 1))}
+                            className={`p-1.5 rounded-md transition-colors ${fontSize === 0 ? 'text-gray-300 dark:text-zinc-700 cursor-not-allowed' : 'text-gray-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm'}`}
+                            disabled={fontSize === 0}
+                        >
+                            <span className="text-xs font-bold">A-</span>
+                        </button>
+                        <div className="w-px h-4 bg-gray-300 dark:bg-zinc-700 mx-1"></div>
+                        <button
+                            onClick={() => setFontSize(Math.min(2, fontSize + 1))}
+                            className={`p-1.5 rounded-md transition-colors ${fontSize === 2 ? 'text-gray-300 dark:text-zinc-700 cursor-not-allowed' : 'text-gray-600 dark:text-zinc-400 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm'}`}
+                            disabled={fontSize === 2}
+                        >
+                            <span className="text-lg font-bold">A+</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="bg-gray-200 dark:bg-zinc-900/50 p-1 rounded-xl border border-gray-300 dark:border-zinc-800 flex relative">
                     <button
                         onClick={() => setActiveSection('news')}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'news' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'news' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
                             }`}
                     >
                         Market News
                     </button>
                     <button
                         onClick={() => setActiveSection('recommendations')}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'recommendations' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all relative z-10 ${activeSection === 'recommendations' ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-zinc-700/50' : 'text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300'
                             }`}
                     >
                         Oportunidades
@@ -83,7 +112,7 @@ const NewsView = () => {
 
             {/* Content: News Tab */}
             {activeSection === 'news' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {loadingNews ? (
                         <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" /></div>
                     ) : (
@@ -93,21 +122,21 @@ const NewsView = () => {
                                 href={item.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block bg-white dark:bg-[#151517] border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group shadow-sm"
+                                className="block bg-white dark:bg-[#151517] border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors cursor-pointer group shadow-sm"
                             >
-                                <div className="flex justify-between items-start mb-3">
+                                <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-2">
-                                        <Clock size={14} className="text-gray-400 dark:text-zinc-600" />
-                                        <span className="text-gray-500 dark:text-zinc-600 text-sm">{item.time}</span>
+                                        <Clock size={12} className="text-gray-400 dark:text-zinc-600" />
+                                        <span className="text-gray-500 dark:text-zinc-600 text-xs">{item.time}</span>
                                     </div>
-                                    <div className="bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-xs font-bold px-3 py-1 rounded uppercase">
+                                    <div className={`bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-bold px-2 py-0.5 rounded uppercase ${currentFont.tag}`}>
                                         {item.tag}
                                     </div>
                                 </div>
-                                <h3 className="text-gray-900 dark:text-white font-bold text-2xl mb-3 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <h3 className={`text-gray-900 dark:text-white font-bold mb-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${currentFont.title}`}>
                                     {item.title}
                                 </h3>
-                                <p className="text-gray-600 dark:text-zinc-500 text-lg line-clamp-3 leading-relaxed">
+                                <p className={`text-gray-600 dark:text-zinc-500 line-clamp-3 leading-relaxed ${currentFont.body}`}>
                                     {item.snippet}
                                 </p>
                                 <div className="mt-5 flex items-center text-blue-600 dark:text-blue-500 font-bold text-sm uppercase tracking-wide group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">

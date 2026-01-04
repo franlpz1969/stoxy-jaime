@@ -244,24 +244,24 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
                             </div>
                         </div>
 
-                        <div className={`text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mt-4 mb-4 tracking-tight transition-all duration-300 ${showBalance ? '' : 'blur-md select-none opacity-50'}`}>
+                        <div className={`text-3xl sm:text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mt-4 mb-4 tracking-tight transition-all duration-300 ${showBalance ? '' : 'blur-md select-none opacity-50'}`}>
                             {currencySymbol}{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
 
                         <div className="flex items-center gap-6 mt-8">
                             <div>
                                 <span className="text-gray-500 dark:text-zinc-500 text-sm font-bold uppercase block mb-1">{t('24h Profit/Loss', '24h Ganancia/Pérdida')}</span>
-                                <div className={`flex items-center gap-1 text-xl font-semibold transition-all duration-300 ${showBalance ? (dayChangeValue >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400') : 'blur-sm select-none opacity-50 text-gray-400 dark:text-zinc-400'}`}>
-                                    {showBalance && (dayChangeValue >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />)}
+                                <div className={`flex items-center gap-1 text-lg sm:text-xl font-semibold transition-all duration-300 ${showBalance ? (dayChangeValue >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400') : 'blur-sm select-none opacity-50 text-gray-400 dark:text-zinc-400'}`}>
+                                    {showBalance && (dayChangeValue >= 0 ? <ArrowUpRight size={20} className="sm:w-6 sm:h-6" /> : <ArrowDownRight size={20} className="sm:w-6 sm:h-6" />)}
                                     {currencySymbol}{Math.abs(dayChangeValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                             </div>
                             <div className="w-px h-12 bg-gray-200 dark:bg-zinc-800"></div>
                             <div>
                                 <span className="text-gray-500 dark:text-zinc-500 text-sm font-bold uppercase block mb-1">{t('Total Profit', 'Ganancia Total')}</span>
-                                <div className={`flex items-center gap-1 text-xl font-semibold transition-all duration-300 ${showBalance ? (totalProfit >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400') : 'blur-sm select-none opacity-50 text-gray-400 dark:text-zinc-400'}`}>
+                                <div className={`flex items-center gap-1 text-lg sm:text-xl font-semibold transition-all duration-300 ${showBalance ? (totalProfit >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400') : 'blur-sm select-none opacity-50 text-gray-400 dark:text-zinc-400'}`}>
                                     <span>{totalProfit >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    <span className="text-sm opacity-70 ml-1">({totalProfitPercent.toFixed(2)}%)</span>
+                                    <span className="text-xs sm:text-sm opacity-70 ml-1">({totalProfitPercent.toFixed(2)}%)</span>
                                 </div>
                             </div>
                         </div>

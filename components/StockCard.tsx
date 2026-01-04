@@ -205,7 +205,7 @@ const StockCard: React.FC<StockCardProps> = ({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-xl sm:text-2xl text-gray-900 dark:text-white truncate leading-tight tracking-tight group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">
+            <h3 className="font-condensed font-bold text-lg sm:text-2xl text-gray-900 dark:text-white truncate leading-tight tracking-tighter group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">
               {stock.companyName}
             </h3>
             <div className="flex items-center gap-2 mt-1">
@@ -220,7 +220,7 @@ const StockCard: React.FC<StockCardProps> = ({
 
         {/* Right: Price */}
         <div className="text-right shrink-0 ml-3">
-          <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <div className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
             {fmtPlain(currentPriceNative, nativeSymbol)}
           </div>
           <div className={`inline-block px-2 py-0.5 rounded text-sm sm:text-base font-bold mt-1 ${isPositiveDay ? 'bg-green-100 text-green-700 dark:bg-[#22c55e] dark:text-white' : 'bg-red-100 text-red-700 dark:bg-[#ef4444] dark:text-white'}`}>
@@ -287,7 +287,7 @@ const StockCard: React.FC<StockCardProps> = ({
           {/* Current Value in Display Currency */}
           <div className="flex flex-col items-end">
             <div className="text-gray-400 dark:text-zinc-500 text-xs font-bold uppercase mb-1">Value</div>
-            <div className={`text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tighter transition-all ${privacyClass}`}>
+            <div className={`text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tighter transition-all ${privacyClass}`}>
               {fmtPlain(currentValueDisplay, displaySymbol)}
             </div>
           </div>

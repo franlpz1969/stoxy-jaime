@@ -473,7 +473,7 @@ const MarketsView: React.FC<MarketsViewProps> = ({ portfolio = [], onSelectMarke
                                         <button
                                             key={region}
                                             onClick={() => { setActiveRegion(region); setSelectedIndex(0); }}
-                                            className={`text-base font-bold pb-2 -mb-2.5 transition-colors border-b-2 whitespace-nowrap ${activeRegion === region
+                                            className={`text-sm sm:text-base font-bold pb-2 -mb-2.5 transition-colors border-b-2 whitespace-nowrap ${activeRegion === region
                                                 ? 'text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400'
                                                 : 'text-gray-400 dark:text-zinc-500 border-transparent hover:text-gray-600 dark:hover:text-zinc-300'
                                                 }`}
@@ -531,7 +531,7 @@ const MarketsView: React.FC<MarketsViewProps> = ({ portfolio = [], onSelectMarke
                                         <button
                                             key={type}
                                             onClick={() => setActiveMoverTab(type)}
-                                            className={`text-xl font-bold transition-colors whitespace-nowrap ${activeMoverTab === type
+                                            className={`text-lg sm:text-xl font-bold transition-colors whitespace-nowrap ${activeMoverTab === type
                                                 ? 'text-blue-600 dark:text-blue-400'
                                                 : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300'
                                                 }`}

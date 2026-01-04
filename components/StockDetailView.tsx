@@ -226,10 +226,25 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                     )}
                 </div>
 
-                <div className="mt-8 px-4 border-b border-zinc-900">
-                    <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+                <div className="mt-8 border-b border-zinc-900">
+                    <div className="flex items-center justify-between px-2 sm:px-4">
                         {TABS.map(tab => (
-                            <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === tab ? 'border-blue-500 text-blue-500' : 'border-transparent text-zinc-500'}`}>{tab}</button>
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`
+                                    pb-3 border-b-2 transition-all flex-1 text-center
+                                    ${activeTab === tab ? 'border-blue-500 text-blue-500' : 'border-transparent text-zinc-500'}
+
+                                    /* Mobile Styles: Condensed, Smaller, Tight Tracking */
+                                    text-[10px] uppercase font-condensed font-bold tracking-tighter
+
+                                    /* Desktop Styles: Standard Font, Larger, Wide Tracking */
+                                    sm:text-xs sm:font-sans sm:font-black sm:tracking-widest
+                                `}
+                            >
+                                {tab}
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -362,7 +377,7 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                                     </div>
                                     <div className="bg-[#1C1C1E] rounded-2xl p-6 border border-zinc-800">
                                         <h3 className="text-white font-bold mb-2 uppercase text-xs tracking-widest text-zinc-500">Analyst Target</h3>
-                                        <div className="text-4xl font-black text-blue-400">
+                                        <div className="text-3xl sm:text-4xl font-black text-blue-400">
                                             {stock.currency || '$'}{analysis.priceTarget?.average?.toFixed(2) || '---'}
                                         </div>
                                         <p className="text-xs text-zinc-500 font-bold mt-1">Institutional Consensus Mean</p>

@@ -731,11 +731,11 @@ const ChartsView: React.FC<ChartsViewProps> = ({ portfolio }) => {
                 </div>
               </div>
               <div className="flex flex-col items-center z-20 mt-2">
-                <div className={`text-3xl font-black uppercase tracking-tight ${getSentimentLabel(sentimentScore).color}`}>
+                <div className={`text-2xl sm:text-3xl font-black uppercase tracking-tight ${getSentimentLabel(sentimentScore).color}`}>
                   {getSentimentLabel(sentimentScore).text}
                 </div>
-                <div className="text-white text-lg font-bold mt-1">
-                  {Math.round(sentimentScore)} <span className="text-zinc-600 text-sm">/ 100</span>
+                <div className="text-white text-base sm:text-lg font-bold mt-1">
+                  {Math.round(sentimentScore)} <span className="text-zinc-600 text-xs sm:text-sm">/ 100</span>
                 </div>
                 <p className="text-zinc-500 text-sm mt-2 max-w-xs leading-relaxed">
                   {getSentimentLabel(sentimentScore).desc}
