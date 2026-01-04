@@ -801,3 +801,29 @@ export const searchSymbols = async (query: string): Promise<any[]> => {
   } catch (e) { }
   return [{ symbol: query.toUpperCase(), description: "Demo Asset (Offline)", type: "EQUITY", exchange: "DEMO" }];
 };
+
+export const analyzePortfolioData = async (portfolioString: string): Promise<string> => {
+  try {
+    const prompt = `
+      Analyze this portfolio composition and provide strategic insights:
+      ${portfolioString}
+
+      Focus on:
+      1. Diversification analysis (Sector/Geo)
+      2. Risk assessment
+      3. 2-3 specific actionable recommendations for optimization.
+      
+      Keep it concise (max 300 words). Use Markdown formatting.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: prompt,
+    });
+
+    return response.text || "Analysis unavailable.";
+  } catch (error) {
+    console.error("Gemini Analysis Error:", error);
+    throw new Error("Failed to generate analysis");
+  }
+};
