@@ -9,6 +9,13 @@ export interface StockData {
   marketStatus?: 'open' | 'closed';
   description?: string;
   sector?: string;
+  industry?: string;
+  employees?: number;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   country?: string;
   marketCap?: string | number;
   peRatio?: number;

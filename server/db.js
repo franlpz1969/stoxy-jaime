@@ -33,6 +33,12 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS google_finance_data (
+    symbol TEXT PRIMARY KEY,
+    data TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
     symbol TEXT NOT NULL,

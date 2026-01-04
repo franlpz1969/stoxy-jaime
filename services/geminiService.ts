@@ -171,7 +171,14 @@ export const generateMockStockData = (symbol: string): StockData => {
     returnOnEquity: 0.12 + (rand(5) / 100),
     fiftyTwoWeekHigh: basePrice * 1.25,
     fiftyTwoWeekLow: basePrice * 0.75,
-    volume: '10M'
+    volume: '10M',
+    sector: "Technology",
+    industry: "Consumer Electronics",
+    employees: 150000,
+    website: "https://example.com",
+    city: "Cupertino",
+    state: "CA",
+    country: "United States"
   };
 };
 
@@ -442,6 +449,15 @@ const mapYahooDataToStockData = (symbol: string, modules: any, priceData: any): 
     logoUrl: `https://logo.clearbit.com/${getRaw(summaryProfile.website)?.replace(/^https?:\/\//, '') || symbol + '.com'}`,
     marketStatus: getRaw(price.marketState) === 'REGULAR' ? 'open' : 'closed',
     description: getRaw(summaryProfile.longBusinessSummary) || "No description available.",
+    sector: getRaw(summaryProfile.sector),
+    industry: getRaw(summaryProfile.industry),
+    employees: getRaw(summaryProfile.fullTimeEmployees),
+    website: getRaw(summaryProfile.website),
+    address: getRaw(summaryProfile.address1),
+    city: getRaw(summaryProfile.city),
+    state: getRaw(summaryProfile.state),
+    zip: getRaw(summaryProfile.zip),
+    country: getRaw(summaryProfile.country),
     marketCap: getRaw(price.marketCap) ? (getRaw(price.marketCap) / 1000000000).toFixed(2) + 'B' : undefined,
     peRatio: getRaw(summaryDetail.trailingPE) || getRaw(summaryDetail.forwardPE),
     eps: getRaw(defaultKeyStatistics.trailingEps),
@@ -503,13 +519,12 @@ const fetchGoogleFinanceData = async (symbol: string) => {
 
 export const fetchStockData = async (query: string): Promise<StockData> => {
   try {
-    const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${query}?modules=price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend`;
     let yahooData;
     let googleData;
 
     try {
       const [yahooRes, googleRes] = await Promise.all([
-        fetchYahoo(summaryUrl).catch(() => ({})),
+        fetch(`/api/quote-summary/${query}`).then(r => r.json()).catch(() => ({})),
         fetchGoogleFinanceData(query)
       ]);
       yahooData = yahooRes.quoteSummary?.result?.[0];
@@ -522,9 +537,9 @@ export const fetchStockData = async (query: string): Promise<StockData> => {
         const symbol = searchResults[0].symbol;
         try {
           // Retry Yahoo with solved symbol
-          const retryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend`;
-          const res = await fetchYahoo(retryUrl);
-          yahooData = res.quoteSummary?.result?.[0];
+          const res = await fetch(`/api/quote-summary/${symbol}`);
+          const json = await res.json();
+          yahooData = json.quoteSummary?.result?.[0];
 
           if (!googleData) {
             googleData = await fetchGoogleFinanceData(symbol);
@@ -579,9 +594,9 @@ export const fetchStockData = async (query: string): Promise<StockData> => {
 
 export const fetchAnalysisData = async (symbol: string): Promise<AnalysisData | null> => {
   try {
-    const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=earningsEstimate,revenueEstimate,earningsHistory,earningsTrend,financialData,recommendationTrend`;
-    const res = await fetchYahoo(summaryUrl);
-    const result = res.quoteSummary?.result?.[0];
+    const res = await fetch(`/api/quote-summary/${symbol}`);
+    const json = await res.json();
+    const result = json.quoteSummary?.result?.[0];
 
     if (!result) throw new Error("No data");
 
@@ -671,35 +686,9 @@ export const fetchAnalysisData = async (symbol: string): Promise<AnalysisData | 
 
 export const fetchStockHistory = async (symbol: string, range: string): Promise<{ timestamp: number; price: number }[]> => {
   try {
-    // Map UI range to Yahoo API params
-    let apiRange = '1d';
-    let apiInterval = '5m';
-
-    switch (range) {
-      case '1D': apiRange = '1d'; apiInterval = '5m'; break;
-      case '5D': apiRange = '5d'; apiInterval = '60m'; break;
-      case '1M': apiRange = '1mo'; apiInterval = '1d'; break;
-      case '6M': apiRange = '6mo'; apiInterval = '1d'; break;
-      case '1Y': apiRange = '1y'; apiInterval = '1d'; break;
-      case '5Y': apiRange = '5y'; apiInterval = '1wk'; break;
-      case 'MAX': apiRange = '10y'; apiInterval = '1mo'; break;
-      default: apiRange = '1mo'; apiInterval = '1d';
-    }
-
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=${apiRange}&interval=${apiInterval}`;
-    const data = await fetchYahoo(url);
-    const result = data.chart?.result?.[0];
-    if (!result) return [];
-    const timestamps = result.timestamp || [];
-    const closes = result.indicators?.quote?.[0]?.close || [];
-    const history: { timestamp: number; price: number }[] = [];
-    for (let i = 0; i < timestamps.length; i++) {
-      const price = closes[i];
-      if (price !== null && price !== undefined) {
-        history.push({ timestamp: timestamps[i] * 1000, price: price });
-      }
-    }
-    return history;
+    const res = await fetch(`/api/stock-history/${symbol}/${range}`);
+    if (!res.ok) return [];
+    return await res.json();
   } catch (error) {
     return [];
   }

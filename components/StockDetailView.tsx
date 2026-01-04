@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2, ExternalLink, MapPin, Users, Globe, Building2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid, Legend, LabelList } from 'recharts';
 import { StockData, AnalysisData } from '../types';
 import { fetchAnalysisData, fetchStockHistory, fetchStockData, fetchCompanyNews } from '../services/geminiService';
@@ -430,10 +430,49 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                         <StockNotes symbol={stock.symbol} />
                     )}
                     {activeTab === 'Info' && (
-                        <div className="px-6 py-4">
+                        <div className="px-6 py-4 space-y-4">
                             <div className="bg-[#0c0c0d] rounded-2xl p-6 border border-zinc-800">
-                                <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><Info size={18} className="text-blue-500" /> Summary</h3>
-                                <p className="text-zinc-400 text-sm leading-relaxed">{stock.description}</p>
+                                <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2"><Info size={18} className="text-blue-500" /> About {stock.companyName}</h3>
+                                <p className="text-zinc-400 text-sm leading-relaxed mb-6">{stock.description}</p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-zinc-900/50 p-4 rounded-xl">
+                                        <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                                            <Building2 size={16} />
+                                            <span className="text-xs font-bold uppercase">Sector</span>
+                                        </div>
+                                        <div className="text-white font-medium text-sm">{stock.sector || 'N/A'}</div>
+                                    </div>
+                                    <div className="bg-zinc-900/50 p-4 rounded-xl">
+                                        <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                                            <Building2 size={16} />
+                                            <span className="text-xs font-bold uppercase">Industry</span>
+                                        </div>
+                                        <div className="text-white font-medium text-sm">{stock.industry || 'N/A'}</div>
+                                    </div>
+                                    <div className="bg-zinc-900/50 p-4 rounded-xl">
+                                        <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                                            <Users size={16} />
+                                            <span className="text-xs font-bold uppercase">Employees</span>
+                                        </div>
+                                        <div className="text-white font-medium text-sm">{stock.employees?.toLocaleString() || 'N/A'}</div>
+                                    </div>
+                                    <div className="bg-zinc-900/50 p-4 rounded-xl">
+                                        <div className="flex items-center gap-2 text-zinc-500 mb-2">
+                                            <MapPin size={16} />
+                                            <span className="text-xs font-bold uppercase">Location</span>
+                                        </div>
+                                        <div className="text-white font-medium text-sm">
+                                            {[stock.city, stock.state, stock.country].filter(Boolean).join(', ') || 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {stock.website && (
+                                    <a href={stock.website} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-bold">
+                                        <Globe size={16} /> Visit Official Website
+                                    </a>
+                                )}
                             </div>
                         </div>
                     )}

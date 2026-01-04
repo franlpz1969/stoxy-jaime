@@ -235,7 +235,7 @@ app.get('/api/quote-summary/:symbol', async (req, res) => {
             await refreshYahooSession();
         }
 
-        const modules = 'price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend';
+        const modules = 'price,summaryDetail,summaryProfile,defaultKeyStatistics,financialData,recommendationTrend,earningsEstimate,revenueEstimate,earningsHistory,earningsTrend';
         let url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${yahooSession.crumb}`;
 
         const fetchOptions = {
@@ -349,6 +349,27 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
     try {
         const { ticker } = req.params;
 
+        // 0. Clean symbol for DB
+        const dbSymbol = ticker.toUpperCase();
+
+        // 1. Check Cache
+        const cached = db.prepare('SELECT data, updated_at FROM google_finance_data WHERE symbol = ?').get(dbSymbol);
+        if (cached) {
+            const now = Date.now();
+            const updatedAt = new Date(cached.updated_at).getTime();
+            const maxAge = 1000 * 60 * 30; // 30 minutes cache
+
+            if (now - updatedAt < maxAge) {
+                try {
+                    const data = JSON.parse(cached.data);
+                    if (data && Object.keys(data).length > 0) {
+                        console.log(`Serving cached Google Finance data for ${dbSymbol}`);
+                        return res.json(data);
+                    }
+                } catch (e) { /* ignore and refetch */ }
+            }
+        }
+
         // Heuristic for ticker format (Yahoo suffix -> Google Exchange)
         let queryTicker = ticker;
         if (!queryTicker.includes(':')) {
@@ -387,25 +408,10 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
 
             let multiplier = 1;
 
-            // Check suffixes (case insensitive, optional space)
-            // In Spanish Short Scale context (if accepted) or Long Scale?
-            // Google Finance ES for Apple shows "B" (Billón = 10^12)
-            // Standard SI: T = 10^12, G/B = 10^9.
-            // But GF ES seems to use B for Billón (10^12). M for Millón (10^6).
-
             if (/[0-9\s](T|t)$/.test(clean)) { multiplier = 1e12; clean = clean.replace(/(T|t)$/, ''); }
-            else if (/[0-9\s](B|b)$/.test(clean)) { multiplier = 1e9; clean = clean.replace(/(B|b)$/, ''); } // B = Billion (10^9) in most Finance contexts including some ES
+            else if (/[0-9\s](B|b)$/.test(clean)) { multiplier = 1e9; clean = clean.replace(/(B|b)$/, ''); } // B = Billion (10^9)
             else if (/[0-9\s](M|m)$/.test(clean)) { multiplier = 1e6; clean = clean.replace(/(M|m)$/, ''); }
             else if (/[0-9\s](K|k)$/.test(clean)) { multiplier = 1e3; clean = clean.replace(/(K|k)$/, ''); }
-
-            // Handle European number format: remove dots (thousands), replace comma with dot (decimal)
-            // But be careful if source is English format (e.g. 1,234.56 or 1.23M)
-            // Google Finance 'es' should be 4,11 T -> 4,11
-            // But if it is 1.234,56 -> 1234.56
-
-            // If the string contains a comma but NO dots, it's likely decimal comma (common in ES)
-            // If it contains dots but NO comma, it might be decimal dot (common in EN) or thousands dot (ES)
-            // To be safe for 'es' scraping: assume Comma is Decimal.
 
             clean = clean.replace(/\./g, '').replace(',', '.').replace(/%/g, '').trim();
             const val = parseFloat(clean);
@@ -432,9 +438,6 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
         };
 
         // Strategy 1: Metric pairs usually reside in div.gyY43 containers
-        // Label class: .m68ZCc
-        // Value class: .P63o9b
-
         $('.gyY43').each((i, el) => {
             const labelEl = $(el).find('.m68ZCc');
             const valueEl = $(el).find('.P63o9b');
@@ -443,7 +446,6 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
                 const labelText = labelEl.text().trim();
                 const valueText = valueEl.text().trim();
 
-                // Check exact match or case-insensitive
                 const key = labels[labelText] || labels[labelText.toUpperCase()];
 
                 if (key) {
@@ -464,10 +466,7 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
             }
         });
 
-
-
         // Strategy 2: Text search fallback override
-        // Handles nested structures like: Row > Span > [Label, Tooltip] + ValueDiv
         $('div').each((i, el) => {
             const text = $(el).text().trim();
             const key = labels[text] || labels[text.toUpperCase()];
@@ -475,33 +474,27 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
             if (key && !data[key]) {
                 let val = null;
 
-                // Path 1: Value is next sibling (Simple case)
-                // e.g. <div>Label</div><div>Value</div>
                 const nextEl = $(el).next();
-                if (nextEl.length && !nextEl.attr('role')) { // Avoid tooltips with role="tooltip"
+                if (nextEl.length && !nextEl.attr('role')) {
                     val = nextEl.text().trim();
                 }
 
-                // Path 2: Value is sibling of parent (Google Finance with Tooltips)
-                // e.g. <span><div>Label</div><div role="tooltip">...</div></span><div class="P6K39c">Value</div>
-                if (!val || val.length > 50) { // If val is too long, it's probably a description
+                if (!val || val.length > 50) {
                     const parentNext = $(el).parent().next();
                     if (parentNext.length) {
                         val = parentNext.text().trim();
                     }
                 }
 
-                // Path 3: Explicit class search in Row
                 if (!val) {
-                    const row = $(el).closest('div[class*="gy"]'); // gyY43 or gyFHrc
+                    const row = $(el).closest('div[class*="gy"]');
                     if (row.length) {
                         val = row.find('.P63o9b, .P6K39c').first().text().trim();
                     }
                 }
 
                 if (val) {
-                    // Validations
-                    if (val.includes('Margen entre') || val.includes('Método de')) return; // Skip descriptions
+                    if (val.includes('Margen entre') || val.includes('Método de')) return;
 
                     if (key === 'dayRange') {
                         const parts = val.split('-').map(p => parseValue(p));
@@ -526,11 +519,39 @@ app.get('/api/google-finance/:ticker', async (req, res) => {
             data.currentPrice = parseValue(currentPriceText);
         }
 
+        // Cache the result if we got valid data
+        if (Object.keys(data).length > 2) { // Ensure we scraped something useful
+            try {
+                db.prepare(`
+                    INSERT INTO google_finance_data (symbol, data, updated_at) 
+                    VALUES (?, ?, datetime('now')) 
+                    ON CONFLICT(symbol) DO UPDATE SET 
+                        data = excluded.data, 
+                        updated_at = datetime('now')
+                `).run(dbSymbol, JSON.stringify(data));
+                console.log(`Cached Google Finance data for ${dbSymbol}`);
+            } catch (dbError) {
+                console.error('Failed to cache Google Finance data:', dbError);
+            }
+        }
+
         res.json(data);
     } catch (error) {
         console.error('Google Finance Scraping Error:', error);
+
+        // Try serving stale cache if live fetch fails
+        try {
+            const dbSymbol = ticker.toUpperCase();
+            const cached = db.prepare('SELECT data FROM google_finance_data WHERE symbol = ?').get(dbSymbol);
+            if (cached) {
+                console.log(`Serving STALE cache for ${dbSymbol} after fetch failure`);
+                return res.json(JSON.parse(cached.data));
+            }
+        } catch (e) { }
+
         res.status(500).json({});
     }
+
 
 });
 // Serve Static Files (Production/Docker)
