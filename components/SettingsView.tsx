@@ -1,5 +1,7 @@
 import React, { useRef } from 'react';
-import { X, Download, Upload, LogOut, User, Globe, ChevronRight, Mail, Moon, Sun } from 'lucide-react';
+import { X, Download, Upload, LogOut, User, Globe, ChevronRight, Moon, Sun, Trash2 } from 'lucide-react';
+import { useAuth } from './AuthContext';
+import LoginButton from './LoginButton';
 
 interface SettingsViewProps {
    isOpen: boolean;
@@ -13,6 +15,7 @@ interface SettingsViewProps {
    setLanguage: (lang: string) => void;
    theme: 'dark' | 'light';
    setTheme: (theme: 'dark' | 'light') => void;
+   onDeleteActivePortfolio?: () => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -26,9 +29,11 @@ const SettingsView: React.FC<SettingsViewProps> = ({
    language,
    setLanguage,
    theme,
-   setTheme
+   setTheme,
+   onDeleteActivePortfolio
 }) => {
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const { user: authUser, isAuthenticated, logout } = useAuth();
 
    if (!isOpen) return null;
 
@@ -53,19 +58,27 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             <section>
                <h3 className="text-zinc-500 text-xs font-bold uppercase mb-4 ml-1">{t('Account', 'Cuenta')}</h3>
                <div className="bg-[#1C1C1E] border border-zinc-800 rounded-3xl overflow-hidden">
-                  {user ? (
+                  {isAuthenticated && authUser ? (
                      <div className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                              {user.name.charAt(0)}
-                           </div>
+                           {authUser.picture ? (
+                              <img
+                                 src={authUser.picture}
+                                 alt={authUser.name}
+                                 className="w-12 h-12 rounded-full border-2 border-blue-500"
+                              />
+                           ) : (
+                              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                 {authUser.name.charAt(0)}
+                              </div>
+                           )}
                            <div>
-                              <div className="font-bold text-white">{user.name}</div>
-                              <div className="text-zinc-500 text-sm">{user.email}</div>
+                              <div className="font-bold text-white">{authUser.name}</div>
+                              <div className="text-zinc-500 text-sm">{authUser.email}</div>
                            </div>
                         </div>
                         <button
-                           onClick={onLogout}
+                           onClick={logout}
                            className="p-2 text-zinc-500 hover:text-red-500 transition-colors"
                         >
                            <LogOut size={20} />
@@ -77,15 +90,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                            <User size={32} />
                         </div>
                         <h4 className="text-white font-bold mb-2">{t('Sign in to Stoxy', 'Iniciar sesión en Stoxy')}</h4>
-                        <p className="text-zinc-500 text-sm mb-6">{t('Sync your portfolio across devices.', 'Sincroniza tu portafolio en todos tus dispositivos.')}</p>
+                        <p className="text-zinc-500 text-sm mb-6">{t('Sync your portfolio across devices and keep your data private.', 'Sincroniza tu portafolio en todos tus dispositivos y mantén tus datos privados.')}</p>
 
-                        <button
-                           onClick={onLogin}
-                           className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
-                        >
-                           <Mail size={18} />
-                           {t('Continue with Google', 'Continuar con Google')}
-                        </button>
+                        <div className="flex justify-center">
+                           <LoginButton
+                              onLoginSuccess={onClose}
+                              className=""
+                           />
+                        </div>
                      </div>
                   )}
                </div>
@@ -191,8 +203,30 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                </div>
             </section>
 
-            <div className="text-center text-zinc-600 text-xs mt-8">
-               StockTracker Pro v1.2.0 • {t('Made with Gemini', 'Hecho con Gemini')}
+            {/* Danger Zone */}
+            <section className="pt-4 border-t border-zinc-800/50">
+               <h3 className="text-red-500/50 text-[10px] font-black uppercase tracking-[2px] mb-4 ml-1">{t('Danger Zone', 'Zona de Peligro')}</h3>
+               <div className="bg-red-500/[0.03] border border-red-500/10 rounded-3xl overflow-hidden">
+                  <button
+                     onClick={onDeleteActivePortfolio}
+                     className="w-full p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors group text-left"
+                  >
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center">
+                           <Trash2 size={18} />
+                        </div>
+                        <div>
+                           <div className="font-bold text-red-500/80 group-hover:text-red-500 transition-colors">{t('Delete Current Portfolio', 'Borrar Cartera Actual')}</div>
+                           <div className="text-[10px] text-zinc-600 font-medium">{t('This action cannot be undone', 'Esta acción no se puede deshacer')}</div>
+                        </div>
+                     </div>
+                     <ChevronRight size={18} className="text-zinc-800 group-hover:text-red-500 transition-colors" />
+                  </button>
+               </div>
+            </section>
+
+            <div className="text-center text-zinc-600 text-[10px] font-bold uppercase tracking-widest mt-8 opacity-50">
+               Stoxy Pro v1.2.0 • {t('Secured Ecosystem', 'Ecosistema Protegido')}
             </div>
 
          </div>

@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Wallet, ArrowUpRight, ArrowDownRight, Plus, User, Eye, EyeOff, ChevronDown, Check, FolderPlus, Trash2, HelpCircle } from 'lucide-react';
 import StockCard from './StockCard';
 import { PortfolioPosition, StockData, Portfolio } from '../types';
+import QuickSetupWizard from './QuickSetupWizard';
+import { useAuth } from './AuthContext';
 
 interface PortfolioViewProps {
     portfolios?: Portfolio[]; // List of all portfolios
     activePortfolioId?: string;
     onSwitchPortfolio?: (id: string) => void;
-    onCreatePortfolio?: (name: string) => void;
+    onCreatePortfolio?: (name: string, currency?: string, firstStock?: string) => Promise<void>;
     onDeletePortfolio?: (id: string) => void;
     portfolio: PortfolioPosition[]; // The current active items
     totalValue: number;
@@ -19,7 +21,8 @@ interface PortfolioViewProps {
     onRemovePosition: (id: string) => void;
     onOpenSettings: () => void;
     onSelectStock: (stock: StockData) => void;
-    onAnalyzePortfolio?: () => void; // New Prop
+    onAnalyzePortfolio?: () => void;
+    onOpenDeleteConfirmation?: (id: string) => void;
     language: string;
     // Currency
     currentCurrency: string;
@@ -44,11 +47,13 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
     onOpenSettings,
     onSelectStock,
     onAnalyzePortfolio,
+    onOpenDeleteConfirmation,
     language,
     currentCurrency,
     onCurrencyChange,
     exchangeRate
 }) => {
+    const { user: authUser } = useAuth();
     const t = (en: string, es: string) => language === 'es' ? es : en;
     const [showBalance, setShowBalance] = useState(true);
 
@@ -57,6 +62,7 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
     const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
     const [newPortfolioName, setNewPortfolioName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [isManageMode, setIsManageMode] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const currencyMenuRef = useRef<HTMLDivElement>(null);
@@ -99,6 +105,29 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
 
     const AVAILABLE_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY'];
 
+    // If no portfolios exist at all, show the Quick Setup Wizard
+    if (portfolios.length === 0) {
+        return (
+            <div className="pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex justify-between items-center py-4 mb-2 px-4 relative z-50">
+                    <button onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-zinc-400 flex items-center justify-center overflow-hidden">
+                        {authUser?.picture ? (
+                            <img src={authUser.picture} alt={authUser.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <User size={20} />
+                        )}
+                    </button>
+                    <div className="w-10" />
+                </div>
+
+                <QuickSetupWizard
+                    onCreatePortfolio={onCreatePortfolio || (() => { })}
+                    language={language}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header Actions */}
@@ -106,9 +135,13 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onOpenSettings}
-                        className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-white flex items-center justify-center transition-colors shadow-sm"
+                        className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-white flex items-center justify-center transition-colors shadow-sm overflow-hidden"
                     >
-                        <User size={20} />
+                        {authUser?.picture ? (
+                            <img src={authUser.picture} alt={authUser.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <User size={20} />
+                        )}
                     </button>
 
                     {/* PORTFOLIO SELECTOR DROPDOWN */}
@@ -124,7 +157,15 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
                         {isPortfolioMenuOpen && (
                             <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[100]">
                                 <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                    <div className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-zinc-500 uppercase">Switch Portfolio</div>
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <div className="text-xs font-bold text-gray-500 dark:text-zinc-500 uppercase tracking-wider">{t('Your Portfolios', 'Tus Carteras')}</div>
+                                        <button
+                                            onClick={() => setIsManageMode(!isManageMode)}
+                                            className="text-[10px] font-black uppercase text-blue-500 hover:text-blue-400 transition-colors"
+                                        >
+                                            {isManageMode ? t('Done', 'Listo') : t('Edit', 'Editar')}
+                                        </button>
+                                    </div>
                                     {portfolios.map(p => (
                                         <div key={p.id} className={`group flex items-center justify-between w-full rounded-xl transition-colors ${activePortfolioId === p.id ? 'bg-blue-50 dark:bg-blue-600/10' : 'hover:bg-gray-100 dark:hover:bg-zinc-800'}`}>
                                             <button
@@ -137,14 +178,13 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
                                                 <span className="font-bold truncate">{p.name}</span>
                                                 {activePortfolioId === p.id && <Check size={16} />}
                                             </button>
-                                            {portfolios.length > 1 && (
+                                            {isManageMode && portfolios.length > 1 && (
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (onDeletePortfolio) onDeletePortfolio(p.id);
+                                                        if (onOpenDeleteConfirmation) onOpenDeleteConfirmation(p.id);
                                                     }}
-                                                    className="p-3 text-gray-400 dark:text-zinc-600 hover:text-red-500 transition-colors"
-                                                    title="Delete Portfolio"
+                                                    className="p-3 text-red-500/50 hover:text-red-500 transition-colors"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
@@ -315,15 +355,6 @@ const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
             </div>
 
-            {/* Floating Add Button */}
-            <div className="fixed bottom-24 right-5 z-40 md:bottom-10 md:right-10">
-                <button
-                    onClick={onOpenAddModal}
-                    className="w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 text-white transition-transform hover:scale-105 active:scale-95"
-                >
-                    <Plus size={28} />
-                </button>
-            </div>
         </div>
     );
 };

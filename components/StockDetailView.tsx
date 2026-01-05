@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, Bell, Star, TrendingUp, TrendingDown, Clock, Newspaper, Share2, Info, Loader2, ExternalLink, MapPin, Users, Globe, Building2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid, Legend, LabelList } from 'recharts';
 import { StockData, AnalysisData } from '../types';
-import { fetchAnalysisData, fetchStockHistory, fetchStockData, fetchCompanyNews } from '../services/geminiService';
+import { fetchAnalysisData, fetchStockHistory, fetchStockData, fetchCompanyNews, getCompanyLogo } from '../services/geminiService';
 import { StockNotes } from './StockNotes';
 import { SankeyChart } from './SankeyChart';
 
@@ -127,8 +127,22 @@ const StockDetailView: React.FC<StockDetailViewProps> = ({ stock: initialStock, 
                 <div className="flex items-center gap-4">
                     <button onClick={onClose} className="p-2 -ml-2 text-gray-600 dark:text-zinc-300"><ArrowLeft size={24} /></button>
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white border border-gray-200 dark:border-transparent overflow-hidden">
-                            <img src={stock.logoUrl} alt={stock.symbol} className="w-full h-full object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                        <div className="w-8 h-8 rounded-full bg-white border border-gray-200 dark:border-transparent overflow-hidden flex items-center justify-center p-0.5">
+                            <img
+                                src={stock.logoUrl || getCompanyLogo(stock.symbol)}
+                                alt={stock.symbol}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                    const target = e.currentTarget;
+                                    if (target.src.includes('raw.githubusercontent.com')) {
+                                        target.src = `https://logo.clearbit.com/${stock.symbol.toLowerCase()}.com`;
+                                    } else if (target.src.includes('logo.clearbit.com')) {
+                                        target.src = `https://www.google.com/s2/favicons?domain=${stock.symbol.toLowerCase()}.com&sz=128`;
+                                    } else {
+                                        target.style.display = 'none';
+                                    }
+                                }}
+                            />
                         </div>
                         <div>
                             <h2 className="font-bold text-sm leading-none text-gray-900 dark:text-white">{stock.companyName}</h2>

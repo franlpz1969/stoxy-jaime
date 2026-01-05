@@ -62,7 +62,9 @@ const fetchFinnhubSearch = async (query: string) => {
       symbol: item.symbol,
       description: item.description,
       type: item.type,
-      exchange: 'US'
+      exchange: 'US',
+      logo: getCompanyLogo(item.symbol),
+      price: 0
     })) : [];
   } catch (error) {
     return [];
@@ -124,18 +126,203 @@ const ALLOWED_COMPANIES = [
   "Meta (META)", "Mastercard (MA)"
 ];
 
-const COMPANY_LOGOS: Record<string, string> = {
-  "GOOGL": "https://logo.clearbit.com/google.com",
+export const COMPANY_LOGOS: Record<string, string> = {
+  // --- US TECH & GIANTS ---
+  "GOOG": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/GOOG.png",
+  "GOOGL": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/GOOGL.png",
+  "AAPL": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/AAPL.png",
+  "MSFT": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/MSFT.png",
+  "AMZN": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/AMZN.png",
+  "META": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/META.png",
+  "NVDA": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/NVDA.png",
+  "TSLA": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/TSLA.png",
+  "NFLX": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/NFLX.png",
+  "AMD": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/AMD.png",
+  "INTC": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/INTC.png",
+  "ADBE": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/ADBE.png",
+  "PYPL": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/PYPL.png",
+  "V": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/V.png",
+  "MA": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/MA.png",
+  "AVGO": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/AVGO.png",
+  "CRM": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/CRM.png",
+  "ORCL": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/ORCL.png",
+
+  // --- US FINANCIALS ---
+  "JPM": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/JPM.png",
+  "BAC": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/BAC.png",
+  "WFC": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/WFC.png",
+  "MS": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/MS.png",
+  "GS": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/GS.png",
+  "BLK": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/BLK.png",
+  "AXP": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/AXP.png",
+
+  // --- US CONSUMER & RETAIL ---
+  "WMT": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/WMT.png",
+  "KO": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/KO.png",
+  "PEP": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/PEP.png",
+  "COST": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/COST.png",
+  "TGT": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/TGT.png",
+  "DIS": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/DIS.png",
+  "NKE": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/NKE.png",
+  "SBUX": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/SBUX.png",
+  "MCD": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/MCD.png",
+  "HD": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/HD.png",
+  "PG": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/PG.png",
+  "JNJ": "https://raw.githubusercontent.com/nvstly/icons/main/stocks/JNJ.png",
+
+  // --- EUROPEAN & IBEX 35 ---
   "MC.PA": "https://logo.clearbit.com/lvmh.com",
-  "CGEO": "https://logo.clearbit.com/georgiacapital.ge",
-  "NOVO-B.CO": "https://logo.clearbit.com/novonordisk.com",
-  // ... (Full list maintained from previous version implicitly via fallbacks)
+  "OR.PA": "https://logo.clearbit.com/loreal.com",
+  "RMS.PA": "https://logo.clearbit.com/hermes.com",
+  "BNP.PA": "https://logo.clearbit.com/bnpparibas.com",
+  "AIR.PA": "https://logo.clearbit.com/airbus.com",
+  "TTE.PA": "https://logo.clearbit.com/totalenergies.com",
   "ASML": "https://logo.clearbit.com/asml.com",
-  "SBUX": "https://logo.clearbit.com/starbucks.com",
-  "MSFT": "https://logo.clearbit.com/microsoft.com",
-  "AMZN": "https://logo.clearbit.com/amazon.com",
-  "META": "https://logo.clearbit.com/meta.com",
-  "PYPL": "https://logo.clearbit.com/paypal.com"
+  "SAP.DE": "https://logo.clearbit.com/sap.com",
+  "SIE.DE": "https://logo.clearbit.com/siemens.com",
+  "DTE.DE": "https://logo.clearbit.com/telekom.com",
+  "VOW3.DE": "https://logo.clearbit.com/volkswagen.com",
+  "BMW.DE": "https://logo.clearbit.com/bmw.com",
+  "NOVO-B.CO": "https://logo.clearbit.com/novonordisk.com",
+  "SAN.MC": "https://logo.clearbit.com/santander.com",
+  "BBVA.MC": "https://logo.clearbit.com/bbva.com",
+  "TEF.MC": "https://logo.clearbit.com/telefonica.com",
+  "ITX.MC": "https://logo.clearbit.com/inditex.com",
+  "IBE.MC": "https://logo.clearbit.com/iberdrola.com",
+  "REP.MC": "https://logo.clearbit.com/repsol.com",
+  "AMS.MC": "https://logo.clearbit.com/amadeus.com",
+  "CABK.MC": "https://logo.clearbit.com/caixabank.com",
+  "FER.MC": "https://logo.clearbit.com/ferrovial.com",
+  "IDR.MC": "https://logo.clearbit.com/indracompany.com",
+  "SAB.MC": "https://logo.clearbit.com/bancosabadell.com",
+  "GRF.MC": "https://logo.clearbit.com/grifols.com",
+
+  // --- OTHERS & CRYPTO ---
+  "WM": "https://logo.clearbit.com/wm.com",
+  "NEE": "https://logo.clearbit.com/nexteraenergy.com",
+  "DUK": "https://logo.clearbit.com/duke-energy.com",
+  "BTC": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+  "ETH": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  "SOL": "https://cryptologos.cc/logos/solana-sol-logo.png",
+  "USDT": "https://cryptologos.cc/logos/tether-usdt-logo.png",
+  "BNB": "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+  "XRP": "https://cryptologos.cc/logos/xrp-xrp-logo.png",
+
+  // --- TECH GROWTH & SPECIALIZED ---
+  "ARM": "https://logo.clearbit.com/arm.com",
+  "SMCI": "https://logo.clearbit.com/supermicro.com",
+  "PLTR": "https://logo.clearbit.com/palantir.com",
+  "CRWD": "https://logo.clearbit.com/crowdstrike.com",
+  "PANW": "https://logo.clearbit.com/paloaltonetworks.com",
+  "OKTA": "https://logo.clearbit.com/okta.com",
+  "DDOG": "https://logo.clearbit.com/datadoghq.com",
+  "SNOW": "https://logo.clearbit.com/snowflake.com",
+  "MSTR": "https://logo.clearbit.com/microstrategy.com",
+  "COIN": "https://logo.clearbit.com/coinbase.com",
+
+  // --- MAJOR ETFs ---
+  "QQQ": "https://logo.clearbit.com/invesco.com",
+  "SPY": "https://logo.clearbit.com/ssga.com",
+  "VOO": "https://logo.clearbit.com/vanguard.com",
+  "VTI": "https://logo.clearbit.com/vanguard.com",
+  "VWO": "https://logo.clearbit.com/vanguard.com",
+  "VEA": "https://logo.clearbit.com/vanguard.com",
+  "SCHD": "https://logo.clearbit.com/schwab.com",
+  "TLT": "https://logo.clearbit.com/ishares.com",
+  "IBIT": "https://logo.clearbit.com/blackrock.com",
+
+  // --- GLOBAL GIANTS ---
+  "BABA": "https://logo.clearbit.com/alibaba.com",
+  "HSBC": "https://logo.clearbit.com/hsbc.com",
+  "RY": "https://logo.clearbit.com/rbc.com",
+  "TM": "https://logo.clearbit.com/toyota.com",
+  "CAT": "https://logo.clearbit.com/caterpillar.com",
+  "UPS": "https://logo.clearbit.com/ups.com",
+  "BHP": "https://logo.clearbit.com/bhp.com",
+  "UNH": "https://logo.clearbit.com/unitedhealthgroup.com",
+  "AZN": "https://logo.clearbit.com/astrazeneca.com",
+};
+
+// Global Cache Helper (Memory + LocalStorage)
+const CACHE_KEY = 'stoxy_logo_cache_v5';
+
+const getCachedLogo = (symbol: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cache = localStorage.getItem(CACHE_KEY);
+    if (cache) {
+      const parsed = JSON.parse(cache);
+      return parsed[symbol] || null;
+    }
+  } catch (e) { return null; }
+  return null;
+};
+
+const saveLogoToCache = (symbol: string, url: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const cache = localStorage.getItem(CACHE_KEY);
+    const parsed = cache ? JSON.parse(cache) : {};
+    parsed[symbol] = url;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+  } catch (e) { }
+};
+
+// Memory Cache for current instance
+const memoLogoCache: Record<string, string> = { ...COMPANY_LOGOS };
+
+export const getCompanyLogo = (symbol: string, website?: string): string => {
+  const s = symbol.toUpperCase();
+
+  // 1. Memory Check
+  if (memoLogoCache[s]) return memoLogoCache[s];
+
+  // 2. Storage Check
+  const cached = getCachedLogo(s);
+  if (cached) {
+    memoLogoCache[s] = cached;
+    return cached;
+  }
+
+  let res = "";
+
+  // 3. Official Website (High Precision)
+  if (website) {
+    const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    if (d && d.includes('.')) res = `https://logo.clearbit.com/${d}`;
+  }
+
+  // 4. Precision Domain Map
+  if (!res) {
+    const domainMap: Record<string, string> = {
+      "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
+      "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
+      "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
+      "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com"
+    };
+    const cleanS = s.split('.')[0];
+    if (domainMap[cleanS]) res = `https://logo.clearbit.com/${domainMap[cleanS]}`;
+  }
+
+  // 5. GitHub HQ Stocks (US)
+  if (!res && !s.includes('.') && !s.includes(':')) {
+    res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
+  }
+
+  // 6. Generic Fallback (Logo.dev style)
+  if (!res) {
+    const cleanTicker = s.split('.')[0].toLowerCase();
+    res = `https://logo.clearbit.com/${cleanTicker}.com`;
+  }
+
+  // 7. Emergency Fallback (DuckDuckGo icons - very reliable)
+  if (!res) {
+    res = `https://icons.duckduckgo.com/ip3/${s.toLowerCase()}.com.ico`;
+  }
+
+  memoLogoCache[s] = res;
+  saveLogoToCache(s, res);
+  return res;
 };
 
 // --- MOCK DATA ---
@@ -400,7 +587,7 @@ export const fetchInvestmentRecommendations = async (): Promise<InvestmentRecomm
     const recommendations = JSON.parse(response.text || "[]");
     return recommendations.map((rec: InvestmentRecommendation) => ({
       ...rec,
-      logoUrl: COMPANY_LOGOS[rec.ticker] || `https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`
+      logoUrl: getCompanyLogo(rec.ticker)
     }));
 
   } catch (error) {
@@ -446,7 +633,7 @@ const mapYahooDataToStockData = (symbol: string, modules: any, priceData: any): 
     currentPrice: getRaw(price.regularMarketPrice) || priceData?.price || 0,
     currency: getRaw(price.currency) || 'USD',
     dayChangePercent: dayChangePercent || priceData?.change || 0,
-    logoUrl: `https://logo.clearbit.com/${getRaw(summaryProfile.website)?.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] || symbol + '.com'}`,
+    logoUrl: getCompanyLogo(symbol, getRaw(summaryProfile.website)),
     marketStatus: getRaw(price.marketState) === 'REGULAR' ? 'open' : 'closed',
     description: getRaw(summaryProfile.longBusinessSummary) || "No description available.",
     sector: getRaw(summaryProfile.sector),
@@ -814,11 +1001,20 @@ export const searchSymbols = async (query: string): Promise<any[]> => {
           symbol: q.symbol,
           description: q.shortname || q.longname || q.symbol,
           type: q.quoteType,
-          exchange: q.exchDisp || q.exchange
+          exchange: q.exchDisp || q.exchange,
+          logo: getCompanyLogo(q.symbol),
+          price: 0
         }));
     }
   } catch (e) { }
-  return [{ symbol: query.toUpperCase(), description: "Demo Asset (Offline)", type: "EQUITY", exchange: "DEMO" }];
+  return [{
+    symbol: query.toUpperCase(),
+    description: "Demo Asset (Offline)",
+    type: "EQUITY",
+    exchange: "DEMO",
+    logo: getCompanyLogo(query),
+    price: 0
+  }];
 };
 
 export const analyzePortfolioData = async (portfolioString: string): Promise<string> => {

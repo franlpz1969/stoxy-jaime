@@ -19,6 +19,8 @@
     "d3": "^7.9.0",
     "d3-sankey": "^0.12.3",
     "express": "^5.2.1",
+    "google-auth-library": "^10.5.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.559.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",

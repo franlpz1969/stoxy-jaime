@@ -13,10 +13,20 @@ const db = new Database(dbPath);
 
 // Initialize DB
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    picture TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS portfolios (
     id TEXT PRIMARY KEY,
+    user_id TEXT,
     data TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
   CREATE TABLE IF NOT EXISTS stock_history (
@@ -47,11 +57,22 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
+    user_id TEXT,
     symbol TEXT NOT NULL,
     title TEXT,
     content TEXT,
-    date INTEGER
+    date INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+// Add user_id column if not exists (migration for existing databases)
+try {
+  db.exec(`ALTER TABLE portfolios ADD COLUMN user_id TEXT`);
+} catch (e) { /* Column already exists */ }
+
+try {
+  db.exec(`ALTER TABLE notes ADD COLUMN user_id TEXT`);
+} catch (e) { /* Column already exists */ }
 
 export default db;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X, FileText } from 'lucide-react';
+import { useAuth } from './AuthContext';
 
 interface Note {
     id: string;
@@ -13,6 +14,7 @@ interface StockNotesProps {
 }
 
 export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
+    const { getAuthHeaders, isAuthenticated } = useAuth();
     const [notes, setNotes] = useState<Note[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -23,7 +25,9 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
     useEffect(() => {
         const loadNotes = async () => {
             try {
-                const res = await fetch(`/api/notes/${symbol}`);
+                const res = await fetch(`/api/notes/${symbol}`, {
+                    headers: getAuthHeaders()
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setNotes(data);
@@ -33,14 +37,17 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
             }
         };
         loadNotes();
-    }, [symbol]);
+    }, [symbol, isAuthenticated, getAuthHeaders]);
 
     // Save Note (Create or Update)
     const saveNote = async (note: Note) => {
         try {
             await fetch('/api/notes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                },
                 body: JSON.stringify({ ...note, symbol })
             });
         } catch (e) {
@@ -51,7 +58,10 @@ export const StockNotes: React.FC<StockNotesProps> = ({ symbol }) => {
     // Delete Note
     const deleteNote = async (id: string) => {
         try {
-            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+            await fetch(`/api/notes/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
         } catch (e) {
             console.error("Failed to delete note", e);
         }

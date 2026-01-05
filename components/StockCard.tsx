@@ -40,9 +40,14 @@ const StockCard: React.FC<StockCardProps> = ({
   }, [stock.logoUrl]);
 
   const handleLogoError = () => {
-    if (logoSrc && logoSrc.includes('logo.clearbit.com')) {
-      const domain = logoSrc.split('/').pop();
-      setLogoSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+    // Stage 1: Try DuckDuckGo if primary fails
+    if (logoSrc && !logoSrc.includes('duckduckgo.com') && !logoSrc.includes('ui-avatars.com')) {
+      const domain = position.stock.symbol.includes('.') ? `${position.stock.symbol.split('.')[0].toLowerCase()}.com` : `${position.stock.symbol.toLowerCase()}.com`;
+      setLogoSrc(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+    }
+    // Stage 2: Fallback to Text Avatar if DuckDuckGo fails
+    else if (logoSrc && !logoSrc.includes('ui-avatars.com')) {
+      setLogoSrc(`https://ui-avatars.com/api/?name=${position.stock.symbol}&background=random&color=fff&size=128&length=2`);
     } else {
       setLogoError(true);
     }

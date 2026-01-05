@@ -4,6 +4,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './db.js';
 import * as cheerio from 'cheerio';
+import {
+    verifyGoogleToken,
+    upsertUser,
+    getUserById,
+    generateSessionToken,
+    requireAuth,
+    optionalAuth,
+    migrateDataToUser
+} from './auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,12 +23,102 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// API Routes
-app.get('/api/portfolios', (req, res) => {
+// ========== AUTH ENDPOINTS ==========
+
+// Login with Google
+app.post('/api/auth/google', async (req, res) => {
     try {
-        const stmt = db.prepare('SELECT * FROM portfolios');
-        const rows = stmt.all();
-        // Return array of parsed data
+        const { idToken, migrateExisting } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ error: 'ID token required' });
+        }
+
+        // Verify Google token
+        const googleUser = await verifyGoogleToken(idToken);
+
+        // Create or update user in database
+        const user = upsertUser(googleUser);
+
+        // Optionally migrate orphan data to this user
+        if (migrateExisting) {
+            const migrated = migrateDataToUser(user.id);
+            console.log(`Migrated data to user ${user.email}:`, migrated);
+        }
+
+        // Generate session token
+        const sessionToken = generateSessionToken(user);
+
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                picture: user.picture,
+            },
+            token: sessionToken,
+        });
+    } catch (error) {
+        console.error('Google auth error:', error);
+        res.status(401).json({ error: 'Authentication failed', details: error.message });
+    }
+});
+
+// Get current user
+app.get('/api/auth/me', requireAuth, (req, res) => {
+    try {
+        const user = getUserById(req.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            picture: user.picture,
+        });
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+// Check if there is data to migrate
+app.get('/api/auth/check-migrate', (req, res) => {
+    try {
+        const portfolioCount = db.prepare('SELECT COUNT(*) as count FROM portfolios WHERE user_id IS NULL').get().count;
+        const noteCount = db.prepare('SELECT COUNT(*) as count FROM notes WHERE user_id IS NULL').get().count;
+        res.json({ canMigrate: portfolioCount > 0 || noteCount > 0 });
+    } catch (error) {
+        console.error('Check migrate error:', error);
+        res.json({ canMigrate: false });
+    }
+});
+
+// Discard orphan data
+app.post('/api/auth/clear-orphan', (req, res) => {
+    try {
+        db.prepare('DELETE FROM portfolios WHERE user_id IS NULL').run();
+        db.prepare('DELETE FROM notes WHERE user_id IS NULL').run();
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Clear orphan error:', error);
+        res.status(500).json({ error: 'Failed to clear orphan data' });
+    }
+});
+
+// Logout (client-side token deletion, server just acknowledges)
+app.post('/api/auth/logout', (req, res) => {
+    res.json({ success: true });
+});
+
+// ========== API ROUTES ==========
+// Portfolios - Protected by auth
+app.get('/api/portfolios', requireAuth, (req, res) => {
+    try {
+        const stmt = db.prepare('SELECT * FROM portfolios WHERE user_id = ?');
+        const rows = stmt.all(req.userId);
         const portfolios = rows.map(row => JSON.parse(row.data));
         res.json(portfolios);
     } catch (error) {
@@ -28,29 +127,47 @@ app.get('/api/portfolios', (req, res) => {
     }
 });
 
-app.post('/api/portfolios', (req, res) => {
+app.post('/api/portfolios', requireAuth, (req, res) => {
     try {
         const portfolios = req.body;
         if (!Array.isArray(portfolios)) {
             return res.status(400).json({ error: 'Expected array of portfolios' });
         }
 
-        const insert = db.prepare('INSERT OR REPLACE INTO portfolios (id, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)');
-        const deleteOld = db.prepare('DELETE FROM portfolios WHERE id NOT IN (' + portfolios.map(() => '?').join(',') + ')');
+        const userId = req.userId || null;
+        const insert = db.prepare('INSERT OR REPLACE INTO portfolios (id, user_id, data, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)');
 
-
+        // Build delete query based on auth status
+        let deleteQuery;
+        if (userId) {
+            deleteQuery = portfolios.length > 0
+                ? `DELETE FROM portfolios WHERE user_id = ? AND id NOT IN (${portfolios.map(() => '?').join(',')})`
+                : 'DELETE FROM portfolios WHERE user_id = ?';
+        } else {
+            deleteQuery = portfolios.length > 0
+                ? `DELETE FROM portfolios WHERE user_id IS NULL AND id NOT IN (${portfolios.map(() => '?').join(',')})`
+                : 'DELETE FROM portfolios WHERE user_id IS NULL';
+        }
 
         const transaction = db.transaction((items) => {
             // Remove deleted portfolios
-            if (items.length > 0) {
-                deleteOld.run(...items.map(p => p.id));
+            if (userId) {
+                if (items.length > 0) {
+                    db.prepare(deleteQuery).run(userId, ...items.map(p => p.id));
+                } else {
+                    db.prepare(deleteQuery).run(userId);
+                }
             } else {
-                db.prepare('DELETE FROM portfolios').run();
+                if (items.length > 0) {
+                    db.prepare(deleteQuery).run(...items.map(p => p.id));
+                } else {
+                    db.prepare(deleteQuery).run();
+                }
             }
 
             // Upsert current ones
             for (const p of items) {
-                insert.run(p.id, JSON.stringify(p));
+                insert.run(p.id, userId, JSON.stringify(p));
             }
         });
 
@@ -62,11 +179,11 @@ app.post('/api/portfolios', (req, res) => {
     }
 });
 
-// Notes API
-app.get('/api/notes/:symbol', (req, res) => {
+// Notes API - Protected by auth
+app.get('/api/notes/:symbol', requireAuth, (req, res) => {
     try {
         const { symbol } = req.params;
-        const notes = db.prepare('SELECT * FROM notes WHERE symbol = ? ORDER BY date DESC').all(symbol);
+        const notes = db.prepare('SELECT * FROM notes WHERE symbol = ? AND user_id = ? ORDER BY date DESC').all(symbol, req.userId);
         res.json(notes);
     } catch (error) {
         console.error('Error fetching notes:', error);
@@ -74,11 +191,12 @@ app.get('/api/notes/:symbol', (req, res) => {
     }
 });
 
-app.post('/api/notes', (req, res) => {
+app.post('/api/notes', requireAuth, (req, res) => {
     try {
         const { id, symbol, title, content, date } = req.body;
-        const stmt = db.prepare('INSERT OR REPLACE INTO notes (id, symbol, title, content, date) VALUES (?, ?, ?, ?, ?)');
-        stmt.run(id, symbol, title, content, date);
+        const userId = req.userId || null;
+        const stmt = db.prepare('INSERT OR REPLACE INTO notes (id, user_id, symbol, title, content, date) VALUES (?, ?, ?, ?, ?, ?)');
+        stmt.run(id, userId, symbol, title, content, date);
         res.json({ success: true });
     } catch (error) {
         console.error('Error saving note:', error);
@@ -86,10 +204,16 @@ app.post('/api/notes', (req, res) => {
     }
 });
 
-app.delete('/api/notes/:id', (req, res) => {
+app.delete('/api/notes/:id', requireAuth, (req, res) => {
     try {
         const { id } = req.params;
-        db.prepare('DELETE FROM notes WHERE id = ?').run(id);
+
+        if (req.userId) {
+            db.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?').run(id, req.userId);
+        } else {
+            db.prepare('DELETE FROM notes WHERE id = ? AND user_id IS NULL').run(id);
+        }
+
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting note:', error);

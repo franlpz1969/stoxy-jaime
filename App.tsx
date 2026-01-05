@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart2, Newspaper, Calendar, PieChart, Wallet, RefreshCw, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { BarChart2, Newspaper, Calendar, PieChart, Wallet, RefreshCw, AlertTriangle, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import TransactionModal from './components/TransactionModal';
 import AddStockModal from './components/AddStockModal';
 import SettingsView from './components/SettingsView';
@@ -8,8 +8,10 @@ import MarketsView from './components/MarketsView';
 import NewsView from './components/NewsView';
 import CalendarView from './components/CalendarView';
 import ChartsView from './components/ChartsView';
+import LandingView from './components/LandingView';
 import StockDetailView from './components/StockDetailView';
 import PortfolioAnalysisModal from './components/PortfolioAnalysisModal';
+import { AuthProvider, useAuth } from './components/AuthContext';
 import { fetchStockData, fetchStockPrice, analyzePortfolioData } from './services/geminiService';
 import { PortfolioPosition, StockSearchInputs, Transaction, TransactionType, StockData, Portfolio } from './types';
 
@@ -24,7 +26,8 @@ const EXCHANGE_RATES: Record<string, number> = {
   'AUD': 1.52
 };
 
-function App() {
+function AppContent() {
+  const { getAuthHeaders, isAuthenticated, isLoading: authLoading, user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('portfolio');
   const [language, setLanguage] = useState('en');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -145,21 +148,20 @@ function App() {
   ];
 
   /* --- PERSISTENCE LOGIC (API) --- */
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(() => [
-    { id: 'institutional', name: 'Global Institutional Core', positions: globalCorePositions },
-    { id: 'innovation', name: 'Innovation & Crypto Alpha', positions: innovationPositions },
-    { id: 'macro', name: 'Macro Fortress & Real Assets', positions: macroPositions }
-  ]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from API on mount
   useEffect(() => {
     const loadPortfolios = async () => {
       try {
-        const res = await fetch('/api/portfolios');
+        const res = await fetch('/api/portfolios', {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
+          // Update state with API data. If new user, data will be []
+          if (Array.isArray(data)) {
             setPortfolios(data);
           }
         }
@@ -169,18 +171,22 @@ function App() {
         setIsLoaded(true);
       }
     };
-    loadPortfolios();
-  }, []);
+    if (isAuthenticated) {
+      loadPortfolios();
+    } else if (!authLoading) {
+      setIsLoaded(true);
+    }
+  }, [isAuthenticated, authLoading, getAuthHeaders]);
 
   // Save to API on change (Debounced to avoid flooding)
   useEffect(() => {
-    if (!isLoaded) return; // Don't save before initial load
+    if (!isLoaded || !isAuthenticated) return; // Don't save before initial load or if not authenticated
 
     const saveToApi = async () => {
       try {
         await fetch('/api/portfolios', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify(portfolios)
         });
       } catch (e) {
@@ -190,18 +196,20 @@ function App() {
 
     const timeoutId = setTimeout(saveToApi, 1000); // Debounce 1s
     return () => clearTimeout(timeoutId);
-  }, [portfolios, isLoaded]);
+  }, [portfolios, isLoaded, getAuthHeaders, isAuthenticated]);
   const [activePortfolioId, setActivePortfolioId] = useState<string>('institutional');
 
-  const activePortfolio = useMemo(() =>
-    portfolios.find(p => p.id === activePortfolioId) || portfolios[0],
-    [portfolios, activePortfolioId]);
+  const activePortfolio = useMemo(() => {
+    if (portfolios.length === 0) return null;
+    return portfolios.find(p => p.id === activePortfolioId) || portfolios[0];
+  }, [portfolios, activePortfolioId]);
 
   const [activePositionId, setActivePositionId] = useState<string | null>(null);
   const [selectedStock, setSelectedStock] = useState<StockData | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [portfolioToDeleteId, setPortfolioToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const refreshPortfolioPrices = async () => {
@@ -244,6 +252,10 @@ function App() {
   }, []);
 
   const { totalValue, totalCost, totalProfit, totalProfitPercent, dayChangeValue } = useMemo(() => {
+    if (!activePortfolio) {
+      return { totalValue: 0, totalCost: 0, totalProfit: 0, totalProfitPercent: 0, dayChangeValue: 0 };
+    }
+
     let tValue = 0;
     let tCost = 0;
     let dChangeVal = 0;
@@ -283,21 +295,37 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCreatePortfolio = (name: string) => {
-    const newPortfolio: Portfolio = { id: crypto.randomUUID(), name: name, positions: [] };
+  const handleCreatePortfolio = async (name: string, currency?: string, firstStock?: string) => {
+    const portfolioId = crypto.randomUUID();
+    const newPortfolio: Portfolio = { id: portfolioId, name: name, positions: [] };
+
+    // Add the portfolio first
     setPortfolios(prev => [...prev, newPortfolio]);
-    setActivePortfolioId(newPortfolio.id);
+    setActivePortfolioId(portfolioId);
+    if (currency) setDisplayCurrency(currency);
+
+    // If a first stock was selected in the wizard, add it with 0 shares as a placeholder
+    if (firstStock) {
+      try {
+        const stockData = await fetchStockData(firstStock);
+        const newPosition: PortfolioPosition = {
+          id: crypto.randomUUID(),
+          stock: stockData,
+          transactions: [],
+          userCurrency: currency || 'USD'
+        };
+        setPortfolios(prev => prev.map(p => p.id === portfolioId ? { ...p, positions: [newPosition] } : p));
+      } catch (e) {
+        console.error("Failed to add initial stock", e);
+      }
+    }
   };
 
   const handleDeletePortfolio = (id: string) => {
     if (portfolios.length <= 1) return;
     const pf = portfolios.find(p => p.id === id);
     if (!pf) return;
-    if (pf.positions.length > 0) {
-      const msg = language === 'es' ? `No se puede eliminar "${pf.name}" porque contiene activos.` : `Cannot delete "${pf.name}" because it contains assets.`;
-      showToast(msg, 'error');
-      return;
-    }
+
     const newPortfolios = portfolios.filter(p => p.id !== id);
     setPortfolios(newPortfolios);
     if (activePortfolioId === id) setActivePortfolioId(newPortfolios[0].id);
@@ -344,7 +372,7 @@ function App() {
   };
 
   const handleAnalyzePortfolio = async () => {
-    if (activePortfolio.positions.length === 0) {
+    if (!activePortfolio || activePortfolio.positions.length === 0) {
       showToast(language === 'es' ? 'El portafolio está vacío' : 'Portfolio is empty', 'error');
       return;
     }
@@ -391,8 +419,9 @@ function App() {
     }
   };
 
-  const handleLogin = () => setUser({ name: 'Jaime Lopez', email: 'jaimelopezprieto2007@gmail.com' });
-  const handleLogout = () => setUser(null);
+  // Auth handlers are now managed by AuthContext - kept for legacy compatibility
+  const handleLogin = () => { };
+  const handleLogout = () => { };
 
   const handleExportData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(portfolios));
@@ -428,7 +457,7 @@ function App() {
     }
   };
 
-  const currentActivePosition = activePortfolio.positions.find(p => p.id === activePositionId);
+  const currentActivePosition = activePortfolio?.positions.find(p => p.id === activePositionId);
   const getCurrencySymbol = (code: string) => {
     if (code === 'EUR') return '€';
     if (code === 'GBP') return '£';
@@ -437,6 +466,25 @@ function App() {
   };
 
   const t = (en: string, es: string) => language === 'es' ? es : en;
+
+  if (authLoading) {
+    return (
+      <div className={`${theme} min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black`}>
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw className="animate-spin text-blue-500" size={48} />
+          <p className="text-sm font-bold text-gray-500 dark:text-zinc-500 animate-pulse">Initializing Ecosystem...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className={`${theme} min-h-screen font-sans selection:bg-blue-500/30 relative bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-300`}>
+        <LandingView language={language} theme={theme} />
+      </div>
+    );
+  }
 
   return (
     <div className={`${theme} min-h-screen font-sans selection:bg-blue-500/30 relative bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-300`}>
@@ -469,7 +517,7 @@ function App() {
             onSwitchPortfolio={handleSwitchPortfolio}
             onCreatePortfolio={handleCreatePortfolio}
             onDeletePortfolio={handleDeletePortfolio}
-            portfolio={activePortfolio.positions}
+            portfolio={activePortfolio?.positions || []}
             totalValue={totalValue}
             totalProfit={totalProfit}
             totalProfitPercent={totalProfitPercent}
@@ -484,12 +532,13 @@ function App() {
             currentCurrency={displayCurrency}
             onCurrencyChange={setDisplayCurrency}
             exchangeRate={EXCHANGE_RATES[displayCurrency] || 1}
+            onOpenDeleteConfirmation={setPortfolioToDeleteId}
           />
         )}
-        {activeTab === 'markets' && <MarketsView portfolio={activePortfolio.positions} onSelectMarketItem={handleOpenMarketItem} />}
-        {activeTab === 'calendar' && <CalendarView portfolio={activePortfolio.positions} />}
+        {activeTab === 'markets' && <MarketsView portfolio={activePortfolio?.positions || []} onSelectMarketItem={handleOpenMarketItem} />}
+        {activeTab === 'calendar' && <CalendarView portfolio={activePortfolio?.positions || []} />}
         {activeTab === 'news' && <NewsView />}
-        {activeTab === 'charts' && <ChartsView portfolio={activePortfolio.positions} />}
+        {activeTab === 'charts' && <ChartsView portfolio={activePortfolio?.positions || []} />}
       </main>
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-gray-200 dark:border-zinc-800/50 pb-safe pt-2 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-lg mx-auto flex justify-around items-end pb-2">
@@ -516,11 +565,69 @@ function App() {
         </div>
       </div>
       <AddStockModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSubmit={handleAddStock} loading={loading} error={error} />
-      <SettingsView isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} user={user} onLogin={handleLogin} onLogout={handleLogout} onExport={handleExportData} onImport={handleImportData} language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} />
+      <SettingsView
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        user={user}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onExport={handleExportData}
+        onImport={handleImportData}
+        language={language}
+        setLanguage={setLanguage}
+        theme={theme}
+        setTheme={setTheme}
+        onDeleteActivePortfolio={() => {
+          if (portfolios.length > 1 && activePortfolioId) {
+            setPortfolioToDeleteId(activePortfolioId);
+          } else if (portfolios.length <= 1) {
+            showToast(t('Cannot delete only portfolio', 'No se puede borrar la única cartera'), 'error');
+          }
+        }}
+      />
       {currentActivePosition && <TransactionModal isOpen={!!activePositionId} onClose={() => setActivePositionId(null)} transactions={currentActivePosition.transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} currencySymbol={getCurrencySymbol(currentActivePosition.userCurrency)} currentPrice={currentActivePosition.stock.currentPrice} />}
       {selectedStock && <StockDetailView stock={selectedStock} onClose={() => setSelectedStock(null)} language={language} />}
       <PortfolioAnalysisModal isOpen={isAnalysisModalOpen} onClose={() => setIsAnalysisModalOpen(false)} analysisText={analysisResult} isAnalyzing={isAnalyzing} />
+
+      {/* Reusable Portfolio Delete Confirmation Modal */}
+      {portfolioToDeleteId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-zinc-800 rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} className="text-red-500" />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{t('Delete Portfolio', 'Borrar Cartera')}</h3>
+            <p className="text-gray-500 dark:text-zinc-400 mb-8 font-medium">
+              {t('Are you sure? All assets in this portfolio will be removed. This action is permanent.', '¿Estás seguro? Todos los activos en esta cartera serán eliminados. Esta acción es permanente.')}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setPortfolioToDeleteId(null)} className="flex-1 px-4 py-4 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
+                {t('Cancel', 'Cancelar')}
+              </button>
+              <button
+                onClick={() => {
+                  handleDeletePortfolio(portfolioToDeleteId);
+                  setPortfolioToDeleteId(null);
+                  setIsSettingsOpen(false);
+                }}
+                className="flex-1 px-4 py-4 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-500 transition-all shadow-lg shadow-red-600/20 active:scale-95"
+              >
+                {t('Delete', 'Borrar')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Main App wrapper with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

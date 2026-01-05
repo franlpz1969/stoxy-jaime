@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Newspaper, ExternalLink, Lightbulb, TrendingUp, Loader2, Sparkles, Target, Calendar, AlertCircle, BarChart3, Zap, Globe, ShieldCheck, Layers, ArrowUpRight, Clock } from 'lucide-react';
 import { InvestmentRecommendation } from '../types';
-import { fetchInvestmentRecommendations, fetchMarketNews } from '../services/geminiService';
+import { fetchInvestmentRecommendations, fetchMarketNews, getCompanyLogo } from '../services/geminiService';
 
 const NewsView = () => {
     const [activeSection, setActiveSection] = useState<'news' | 'recommendations'>('news');
@@ -212,16 +212,11 @@ const NewsView = () => {
                                         <div className="flex items-center gap-5">
                                             <div className="w-20 h-20 bg-white dark:bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-lg">
                                                 <img
-                                                    src={rec.logoUrl || `https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`}
+                                                    src={rec.logoUrl || getCompanyLogo(rec.ticker)}
                                                     className="w-12 h-12 object-contain"
                                                     onError={(e) => {
                                                         const target = e.currentTarget;
-                                                        // Fallback chain: LogoURL -> Clearbit Ticker -> UI Avatars (Initials)
-                                                        if (target.src === rec.logoUrl && rec.logoUrl) {
-                                                            target.src = `https://logo.clearbit.com/${rec.ticker.toLowerCase()}.com`;
-                                                        } else {
-                                                            target.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`;
-                                                        }
+                                                        target.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`;
                                                     }}
                                                 />
                                             </div>

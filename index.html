@@ -57,15 +57,19 @@
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
   <script>
-      // Apply theme before React loads to prevent flash
-      (function () {
-        const savedTheme = localStorage.getItem('stoxy-theme');
-        if (savedTheme === 'light') {
-          document.documentElement.classList.remove('dark');
-        } else {
-          document.documentElement.classList.add('dark');
-        }
-      })();
+    // Google OAuth Client ID - Replace with your actual Client ID from Google Cloud Console
+    // Get it from: https://console.cloud.google.com/apis/credentials
+    window.GOOGLE_CLIENT_ID = '358731752606-5i776ll87ql2ehees6iu68qiloea0b8s.apps.googleusercontent.com';
+
+    // Apply theme before React loads to prevent flash
+    (function () {
+      const savedTheme = localStorage.getItem('stoxy-theme');
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    })();
   </script>
 </body>
 

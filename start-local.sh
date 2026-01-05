@@ -13,12 +13,12 @@ BACKEND_PID=$!
 sleep 2
 
 # Start Frontend
-echo "Starting Frontend..."
-npm run dev &
+echo "Starting Frontend on port 5001..."
+npm run dev -- --port 5001 &
 FRONTEND_PID=$!
 
 echo "App is running!"
-echo "Frontend: http://localhost:3000"
+echo "Frontend: http://localhost:5001"
 echo "Backend: http://localhost:3001"
 echo ""
 echo "Press CTRL+C to stop both servers."
