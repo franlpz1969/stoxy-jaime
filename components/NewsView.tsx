@@ -210,13 +210,13 @@ const NewsView = () => {
                                     {/* Top Header */}
                                     <div className="flex justify-between items-start mb-8 relative z-10">
                                         <div className="flex items-center gap-5">
-                                            <div className="w-20 h-20 bg-white dark:bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-lg">
+                                            <div className="w-20 h-20 bg-white dark:bg-white rounded-3xl flex items-center justify-center overflow-hidden border border-gray-200 dark:border-zinc-800 shadow-lg p-3">
                                                 <img
-                                                    src={rec.logoUrl || getCompanyLogo(rec.ticker)}
-                                                    className="w-12 h-12 object-contain"
+                                                    src={getCompanyLogo(rec.ticker)}
+                                                    className="w-full h-full object-contain"
                                                     onError={(e) => {
-                                                        const target = e.currentTarget;
-                                                        target.src = `https://ui-avatars.com/api/?name=${rec.ticker}&background=random`;
+                                                        const domain = rec.ticker.split('.')[0].toLowerCase() + '.com';
+                                                        e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
                                                     }}
                                                 />
                                             </div>

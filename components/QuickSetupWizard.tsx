@@ -160,20 +160,14 @@ const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onCreatePortfolio, 
                                                 className="w-full px-4 py-3 text-left hover:bg-blue-500/5 flex items-center justify-between group transition-colors"
                                             >
                                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden flex-shrink-0">
+                                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-white border border-gray-200 dark:border-zinc-700 overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                                                         <img
-                                                            src={item.logo || getCompanyLogo(item.symbol)}
+                                                            src={getCompanyLogo(item.symbol)}
                                                             alt={item.symbol}
                                                             className="w-full h-full object-contain"
                                                             onError={(e) => {
-                                                                const target = e.currentTarget;
-                                                                if (target.src.includes('img.logo.dev') || target.src.includes('raw.githubusercontent.com')) {
-                                                                    target.src = `https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`;
-                                                                } else if (target.src.includes('logo.clearbit.com')) {
-                                                                    target.src = `https://www.google.com/s2/favicons?domain=${item.symbol.toLowerCase()}.com&sz=128`;
-                                                                } else {
-                                                                    target.style.display = 'none';
-                                                                }
+                                                                const domain = item.symbol.split('.')[0].toLowerCase() + '.com';
+                                                                e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
                                                             }}
                                                         />
                                                     </div>

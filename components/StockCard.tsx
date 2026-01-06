@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { PortfolioPosition } from '../types';
 import Sparkline from './Sparkline';
 import { Clock, AlignJustify, Trash2, AlertTriangle } from 'lucide-react';
+import { getCompanyLogo } from '../services/geminiService';
 
 interface StockCardProps {
   position: PortfolioPosition;
@@ -27,27 +28,24 @@ const StockCard: React.FC<StockCardProps> = ({
 }) => {
   const { stock, transactions, userCurrency } = position;
 
-  // Robust Logo Handling
-  const [logoSrc, setLogoSrc] = useState(stock.logoUrl);
+  // Dynamic Logo Logic
+  const dynamicLogo = useMemo(() => getCompanyLogo(stock.symbol, stock.website), [stock.symbol, stock.website]);
+  const [logoSrc, setLogoSrc] = useState(dynamicLogo);
   const [logoError, setLogoError] = useState(false);
 
   // Delete Confirmation State
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
-    setLogoSrc(stock.logoUrl);
+    setLogoSrc(dynamicLogo);
     setLogoError(false);
-  }, [stock.logoUrl]);
+  }, [dynamicLogo]);
 
   const handleLogoError = () => {
-    // Stage 1: Try DuckDuckGo if primary fails
-    if (logoSrc && !logoSrc.includes('duckduckgo.com') && !logoSrc.includes('ui-avatars.com')) {
-      const domain = position.stock.symbol.includes('.') ? `${position.stock.symbol.split('.')[0].toLowerCase()}.com` : `${position.stock.symbol.toLowerCase()}.com`;
-      setLogoSrc(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-    }
-    // Stage 2: Fallback to Text Avatar if DuckDuckGo fails
-    else if (logoSrc && !logoSrc.includes('ui-avatars.com')) {
-      setLogoSrc(`https://ui-avatars.com/api/?name=${position.stock.symbol}&background=random&color=fff&size=128&length=2`);
+    // If our primary dynamic URL fails, fallback to simple favicon query
+    if (logoSrc && !logoSrc.includes('google.com/s2/favicons')) {
+      const cleanTicker = stock.symbol.split('.')[0].toLowerCase();
+      setLogoSrc(`https://www.google.com/s2/favicons?domain=${cleanTicker}.com&sz=128`);
     } else {
       setLogoError(true);
     }

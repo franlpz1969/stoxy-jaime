@@ -119,17 +119,10 @@ const MarketListItem: React.FC<MarketListItemProps> = ({ item, onClick, showType
     }, [item.logo, item.symbol]);
 
     const handleError = () => {
-        // If Logo.dev fails (or we guessed ticker.com wrong), try Clearbit
-        if (imgSrc && imgSrc.includes('img.logo.dev')) {
-            setImgSrc(`https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`);
-        }
-        // If GitHub source fails, try Clearbit
-        else if (imgSrc && imgSrc.includes('raw.githubusercontent.com')) {
-            setImgSrc(`https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`);
-        }
-        // If Clearbit fails, try Google Favicon (THE ULTIMATE FALLBACK)
-        else if (imgSrc && imgSrc.includes('logo.clearbit.com')) {
-            setImgSrc(`https://www.google.com/s2/favicons?domain=${item.symbol.toLowerCase()}.com&sz=128`);
+        // If our primary dynamic URL fails, fallback to simple favicon query
+        if (imgSrc && !imgSrc.includes('google.com/s2/favicons')) {
+            const domain = item.symbol.split('.')[0].toLowerCase() + '.com';
+            setImgSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
         } else {
             setImgError(true);
         }

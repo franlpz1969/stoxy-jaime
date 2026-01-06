@@ -144,12 +144,15 @@ const AddStockModal: React.FC<AddStockModalProps> = ({ isOpen, onClose, onSubmit
                         className="flex items-center justify-between p-3 hover:bg-zinc-800/50 cursor-pointer border-b border-zinc-900 last:border-0 transition-colors group"
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
-                          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden flex-shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-zinc-800 overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                             <img
-                              src={item.logo || getCompanyLogo(item.symbol)}
+                              src={getCompanyLogo(item.symbol)}
                               alt={item.symbol}
                               className="w-full h-full object-contain"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              onError={(e) => {
+                                const domain = item.symbol.split('.')[0].toLowerCase() + '.com';
+                                e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                              }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
