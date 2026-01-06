@@ -130,37 +130,31 @@ const ALLOWED_COMPANIES = [
 // Logo fetching function (no caching)
 export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
-  const cleanTicker = s.split('.')[0];
+  const cleanTicker = s.split('.')[0].toLowerCase();
 
-  // 1. TradingView High-Quality Logos (BEST LOOKING - COLOR)
-  // These are the logos used by professional traders
-  const tradingViewNames: Record<string, string> = {
-    "AAPL": "apple",
-    "GOOG": "google",
-    "GOOGL": "google",
-    "MSFT": "microsoft",
-    "AMZN": "amazon",
-    "TSLA": "tesla",
-    "META": "meta",
-    "NVDA": "nvidia",
-    "NFLX": "netflix",
-    "JNJ": "johnson-and-johnson",
-    "V": "visa",
-    "MA": "mastercard",
-    "JPM": "jpmorgan-chase"
+  // 1. Precision Domain Map (Ensures we hit the right website for the Favicon)
+  const domainMap: Record<string, string> = {
+    "AAPL": "apple.com",
+    "GOOG": "google.com",
+    "GOOGL": "google.com",
+    "MSFT": "microsoft.com",
+    "AMZN": "amazon.com",
+    "TSLA": "tesla.com",
+    "META": "meta.com",
+    "NVDA": "nvidia.com",
+    "NFLX": "netflix.com",
+    "JNJ": "jnj.com",
+    "V": "visa.com",
+    "MA": "mastercard.com",
+    "JPM": "jpmorganchase.com",
+    "BAC": "bankofamerica.com",
+    "WMT": "walmart.com",
+    "DIS": "disney.com"
   };
 
-  if (tradingViewNames[s]) {
-    return `https://s3-symbol-logo.tradingview.com/${tradingViewNames[s]}--big.svg`;
-  }
+  const domain = domainMap[s] || (website ? website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : `${cleanTicker}.com`);
 
-  // 2. Generic TradingView (for other tickers)
-  if (!s.includes('.') && !s.includes(':')) {
-    return `https://s3-symbol-logo.tradingview.com/${cleanTicker.toLowerCase()}--big.svg`;
-  }
-
-  // 3. Fallback: Google Favicon (THE ULTIMATE FALLBACK)
-  const domain = website ? website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : `${cleanTicker.toLowerCase()}.com`;
+  // 2. Primary Source: Google Favicon (Highest Reliability)
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 };
 
