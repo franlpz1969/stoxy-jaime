@@ -128,60 +128,51 @@ const ALLOWED_COMPANIES = [
 
 
 // Logo fetching function (no caching)
+// Logo fetching function (no caching)
 export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
+  const cleanTicker = s.split('.')[0].toLowerCase();
 
-  // 1. Specific High-Quality Logos (PRIORITY)
-  if (s === 'GOOG' || s === 'GOOGL') {
-    return 'https://img.logo.dev/google.com?format=png&size=200';
-  }
-
-  let res = "";
-
-  // 2. Precision Domain Map
+  // 1. Logo.dev (BEST QUALITY - COLOR LOGOS)
+  // Try by domain if we have it
   const domainMap: Record<string, string> = {
     "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
     "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
-    "AAPL": "apple.com", "META": "meta.com",
+    "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
     "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
     "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
     "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com"
   };
-  const cleanS = s.split('.')[0];
-  if (domainMap[cleanS]) {
-    res = `https://logo.clearbit.com/${domainMap[cleanS]}`;
+
+  if (domainMap[s]) {
+    return `https://img.logo.dev/${domainMap[s]}?format=png&size=200`;
   }
 
-  // 3. Official Website (if provided)
-  if (!res && website) {
+  // Try using the ticker.com as a guess for Logo.dev
+  let res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
+
+  // 2. Official Website via Clearbit
+  if (website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     if (d && d.includes('.')) {
-      res = `https://logo.clearbit.com/${d}`;
+      return `https://logo.clearbit.com/${d}`;
     }
   }
 
-  // 4. GitHub HQ Stocks (US) - Only for stocks NOT in domain map
+  // 3. Clearbit fallback
+  if (!res) {
+    res = `https://logo.clearbit.com/${cleanTicker}.com`;
+  }
+
+  // 4. GitHub HQ Stocks (US) - LAST RESORT (Simple icons)
   if (!res && !s.includes('.') && !s.includes(':')) {
     res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // 5. Clearbit generic fallback
+  // 5. Emergency Fallback
   if (!res) {
-    const cleanTicker = s.split('.')[0].toLowerCase();
-    res = `https://logo.clearbit.com/${cleanTicker}.com`;
+    res = `https://icons.duckduckgo.com/ip3/${cleanTicker}.com.ico`;
   }
-
-  // 6. Logo.dev fallback
-  if (!res) {
-    const cleanTicker = s.split('.')[0].toLowerCase();
-    res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
-  }
-
-  // 7. Emergency Fallback (DuckDuckGo icons)
-  if (!res) {
-    res = `https://icons.duckduckgo.com/ip3/${s.toLowerCase()}.com.ico`;
-  }
-
 
   return res;
 };
