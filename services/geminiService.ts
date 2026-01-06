@@ -244,7 +244,7 @@ export const COMPANY_LOGOS: Record<string, string> = {
 };
 
 // Global Cache Helper (Memory + LocalStorage)
-const CACHE_KEY = 'stoxy_logo_cache_v7';
+const CACHE_KEY = 'stoxy_logo_cache_v8';
 
 const getCachedLogo = (symbol: string): string | null => {
   if (typeof window === 'undefined') return null;
@@ -286,48 +286,46 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
 
   let res = "";
 
-  // 3. Official Website (High Precision) - Try Logo.dev first (free tier)
-  if (website) {
+  // 3. Precision Domain Map (HIGHEST PRIORITY for known companies)
+  const domainMap: Record<string, string> = {
+    "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
+    "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
+    "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
+    "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
+    "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
+    "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com"
+  };
+  const cleanS = s.split('.')[0];
+  if (domainMap[cleanS]) {
+    res = `https://logo.clearbit.com/${domainMap[cleanS]}`;
+  }
+
+  // 4. Official Website (if provided)
+  if (!res && website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     if (d && d.includes('.')) {
-      res = `https://img.logo.dev/${d}?format=png&size=200`;
+      res = `https://logo.clearbit.com/${d}`;
     }
   }
 
-  // 4. Precision Domain Map with Logo.dev
-  if (!res) {
-    const domainMap: Record<string, string> = {
-      "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
-      "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
-      "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
-      "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
-      "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
-      "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com"
-    };
-    const cleanS = s.split('.')[0];
-    if (domainMap[cleanS]) {
-      res = `https://img.logo.dev/${domainMap[cleanS]}?format=png&size=200`;
-    }
-  }
-
-  // 5. GitHub HQ Stocks (US) - Very reliable for major US stocks
+  // 5. GitHub HQ Stocks (US) - Only for stocks NOT in domain map
   if (!res && !s.includes('.') && !s.includes(':')) {
     res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // 6. Clearbit (good fallback, widely used)
+  // 6. Clearbit generic fallback
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://logo.clearbit.com/${cleanTicker}.com`;
   }
 
-  // 7. Logo.dev generic fallback (free tier)
+  // 7. Logo.dev fallback
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
   }
 
-  // 8. Emergency Fallback (DuckDuckGo icons - very reliable)
+  // 8. Emergency Fallback (DuckDuckGo icons)
   if (!res) {
     res = `https://icons.duckduckgo.com/ip3/${s.toLowerCase()}.com.ico`;
   }
