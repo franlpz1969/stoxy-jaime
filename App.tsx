@@ -15,6 +15,18 @@ import { AuthProvider, useAuth } from './components/AuthContext';
 import { fetchStockData, fetchStockPrice, analyzePortfolioData } from './services/geminiService';
 import { PortfolioPosition, StockSearchInputs, Transaction, TransactionType, StockData, Portfolio } from './types';
 
+// Polyfill for crypto.randomUUID() in HTTP contexts
+if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
+  (crypto as any).randomUUID = function (): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+}
+
+
 type Tab = 'portfolio' | 'markets' | 'calendar' | 'news' | 'charts';
 
 const EXCHANGE_RATES: Record<string, number> = {
