@@ -34,25 +34,8 @@ const INDICES_OVERVIEW: Record<string, any[]> = {
     ]
 };
 
-const MOVERS_DATA = [
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 135.02, changePct: -3.27, isUp: false, logo: getCompanyLogo('NVDA'), category: 'STOCK' },
-    { symbol: 'SMCI', name: 'Super Micro Computer', price: 38.38, changePct: -5.34, isUp: false, logo: getCompanyLogo('SMCI'), category: 'STOCK' },
-    { symbol: 'TSLA', name: 'Tesla Inc', price: 218.50, changePct: 1.45, isUp: true, logo: getCompanyLogo('TSLA'), category: 'STOCK' },
-    { symbol: 'PLTR', name: 'Palantir Tech', price: 62.50, changePct: 0.85, isUp: true, logo: getCompanyLogo('PLTR'), category: 'STOCK' }
-];
-
-// Full Lists Data
-const STOCKS_DATA = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 232.45, changePct: 1.25, isUp: true, logo: getCompanyLogo('AAPL') },
-    { symbol: 'MSFT', name: 'Microsoft Corp', price: 420.45, changePct: 0.85, isUp: true, logo: getCompanyLogo('MSFT') },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 168.20, changePct: -0.55, isUp: false, logo: getCompanyLogo('GOOGL') },
-    { symbol: 'AMZN', name: 'Amazon.com', price: 180.15, changePct: 1.10, isUp: true, logo: getCompanyLogo('AMZN') },
-    { symbol: 'META', name: 'Meta Platforms', price: 495.60, changePct: 2.15, isUp: true, logo: getCompanyLogo('META') },
-    { symbol: 'AMD', name: 'Advanced Micro Devices', price: 178.50, changePct: 4.30, isUp: true, logo: getCompanyLogo('AMD') },
-    { symbol: 'NFLX', name: 'Netflix Inc', price: 615.00, changePct: -1.05, isUp: false, logo: getCompanyLogo('NFLX') },
-    { symbol: 'ABNB', name: 'Airbnb Inc', price: 165.20, changePct: 0.45, isUp: true, logo: getCompanyLogo('ABNB') },
-    { symbol: 'ADBE', name: 'Adobe Inc', price: 480.10, changePct: -1.20, isUp: false, logo: getCompanyLogo('ADBE') },
-];
+// Full Lists Data are now computed inside the component or via useMemo if needed
+// to ensure getCompanyLogo() is called with the latest logic.
 
 const CRYPTO_DATA = [
     { symbol: 'BTC', name: 'Bitcoin', price: 68450.00, changePct: 2.50, isUp: true, logo: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png' },
@@ -136,14 +119,17 @@ const MarketListItem: React.FC<MarketListItemProps> = ({ item, onClick, showType
     }, [item.logo, item.symbol]);
 
     const handleError = () => {
-        // If GitHub source fails, try Clearbit
-        if (imgSrc && imgSrc.includes('raw.githubusercontent.com')) {
+        // If Logo.dev fails (or we guessed ticker.com wrong), try Clearbit
+        if (imgSrc && imgSrc.includes('img.logo.dev')) {
             setImgSrc(`https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`);
         }
-        // If Clearbit fails, try Google Favicon (very reliable)
+        // If GitHub source fails, try Clearbit
+        else if (imgSrc && imgSrc.includes('raw.githubusercontent.com')) {
+            setImgSrc(`https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`);
+        }
+        // If Clearbit fails, try Google Favicon (THE ULTIMATE FALLBACK)
         else if (imgSrc && imgSrc.includes('logo.clearbit.com')) {
-            const domain = imgSrc.split('/').pop()?.split('?')[0] || `${item.symbol.toLowerCase()}.com`;
-            setImgSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+            setImgSrc(`https://www.google.com/s2/favicons?domain=${item.symbol.toLowerCase()}.com&sz=128`);
         } else {
             setImgError(true);
         }
@@ -275,6 +261,26 @@ const MarketsView: React.FC<MarketsViewProps> = ({ portfolio = [], onSelectMarke
             });
         }
     };
+
+    // Moving Mock Data inside component to ensure getCompanyLogo() is reactive
+    const MOVERS_DATA = useMemo(() => [
+        { symbol: 'NVDA', name: 'NVIDIA Corp', price: 135.02, changePct: -3.27, isUp: false, logo: getCompanyLogo('NVDA'), category: 'STOCK' },
+        { symbol: 'SMCI', name: 'Super Micro Computer', price: 38.38, changePct: -5.34, isUp: false, logo: getCompanyLogo('SMCI'), category: 'STOCK' },
+        { symbol: 'TSLA', name: 'Tesla Inc', price: 218.50, changePct: 1.45, isUp: true, logo: getCompanyLogo('TSLA'), category: 'STOCK' },
+        { symbol: 'PLTR', name: 'Palantir Tech', price: 62.50, changePct: 0.85, isUp: true, logo: getCompanyLogo('PLTR'), category: 'STOCK' }
+    ], []);
+
+    const STOCKS_DATA = useMemo(() => [
+        { symbol: 'AAPL', name: 'Apple Inc.', price: 232.45, changePct: 1.25, isUp: true, logo: getCompanyLogo('AAPL') },
+        { symbol: 'MSFT', name: 'Microsoft Corp', price: 420.45, changePct: 0.85, isUp: true, logo: getCompanyLogo('MSFT') },
+        { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 168.20, changePct: -0.55, isUp: false, logo: getCompanyLogo('GOOGL') },
+        { symbol: 'AMZN', name: 'Amazon.com', price: 180.15, changePct: 1.10, isUp: true, logo: getCompanyLogo('AMZN') },
+        { symbol: 'META', name: 'Meta Platforms', price: 495.60, changePct: 2.15, isUp: true, logo: getCompanyLogo('META') },
+        { symbol: 'AMD', name: 'Advanced Micro Devices', price: 178.50, changePct: 4.30, isUp: true, logo: getCompanyLogo('AMD') },
+        { symbol: 'NFLX', name: 'Netflix Inc', price: 615.00, changePct: -1.05, isUp: false, logo: getCompanyLogo('NFLX') },
+        { symbol: 'ABNB', name: 'Airbnb Inc', price: 165.20, changePct: 0.45, isUp: true, logo: getCompanyLogo('ABNB') },
+        { symbol: 'ADBE', name: 'Adobe Inc', price: 480.10, changePct: -1.20, isUp: false, logo: getCompanyLogo('ADBE') },
+    ], []);
 
     // --- SEARCH LOGIC (REAL API) ---
 

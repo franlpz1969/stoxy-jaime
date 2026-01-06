@@ -165,7 +165,16 @@ const QuickSetupWizard: React.FC<QuickSetupWizardProps> = ({ onCreatePortfolio, 
                                                             src={item.logo || getCompanyLogo(item.symbol)}
                                                             alt={item.symbol}
                                                             className="w-full h-full object-contain"
-                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                            onError={(e) => {
+                                                                const target = e.currentTarget;
+                                                                if (target.src.includes('img.logo.dev') || target.src.includes('raw.githubusercontent.com')) {
+                                                                    target.src = `https://logo.clearbit.com/${item.symbol.toLowerCase()}.com`;
+                                                                } else if (target.src.includes('logo.clearbit.com')) {
+                                                                    target.src = `https://www.google.com/s2/favicons?domain=${item.symbol.toLowerCase()}.com&sz=128`;
+                                                                } else {
+                                                                    target.style.display = 'none';
+                                                                }
+                                                            }}
                                                         />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
