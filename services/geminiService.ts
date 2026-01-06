@@ -244,7 +244,7 @@ export const COMPANY_LOGOS: Record<string, string> = {
 };
 
 // Global Cache Helper (Memory + LocalStorage)
-const CACHE_KEY = 'stoxy_logo_cache_v6';
+const CACHE_KEY = 'stoxy_logo_cache_v7';
 
 const getCachedLogo = (symbol: string): string | null => {
   if (typeof window === 'undefined') return null;
@@ -286,11 +286,11 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
 
   let res = "";
 
-  // 3. Official Website (High Precision) - Try Logo.dev first
+  // 3. Official Website (High Precision) - Try Logo.dev first (free tier)
   if (website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     if (d && d.includes('.')) {
-      res = `https://img.logo.dev/${d}?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
+      res = `https://img.logo.dev/${d}?format=png&size=200`;
     }
   }
 
@@ -306,25 +306,25 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
     };
     const cleanS = s.split('.')[0];
     if (domainMap[cleanS]) {
-      res = `https://img.logo.dev/${domainMap[cleanS]}?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
+      res = `https://img.logo.dev/${domainMap[cleanS]}?format=png&size=200`;
     }
   }
 
-  // 5. GitHub HQ Stocks (US)
+  // 5. GitHub HQ Stocks (US) - Very reliable for major US stocks
   if (!res && !s.includes('.') && !s.includes(':')) {
     res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // 6. Logo.dev generic fallback (best for most companies)
-  if (!res) {
-    const cleanTicker = s.split('.')[0].toLowerCase();
-    res = `https://img.logo.dev/${cleanTicker}.com?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
-  }
-
-  // 7. Clearbit fallback
+  // 6. Clearbit (good fallback, widely used)
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://logo.clearbit.com/${cleanTicker}.com`;
+  }
+
+  // 7. Logo.dev generic fallback (free tier)
+  if (!res) {
+    const cleanTicker = s.split('.')[0].toLowerCase();
+    res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
   }
 
   // 8. Emergency Fallback (DuckDuckGo icons - very reliable)
