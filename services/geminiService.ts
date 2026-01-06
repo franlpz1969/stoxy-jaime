@@ -128,30 +128,24 @@ const ALLOWED_COMPANIES = [
 
 
 // Logo fetching function (no caching)
-// Logo fetching function (no caching)
 export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
   const cleanTicker = s.split('.')[0].toLowerCase();
 
-  // 1. Logo.dev (BEST QUALITY - COLOR LOGOS)
-  // Try by domain if we have it
+  // 1. Precision Domain Map (The most reliable way)
   const domainMap: Record<string, string> = {
     "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
     "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
     "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
     "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
     "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
-    "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com"
+    "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com",
+    "JNJ": "jnj.com", "V": "visa.com", "MA": "mastercard.com", "PYPL": "paypal.com"
   };
 
-  if (domainMap[s]) {
-    return `https://img.logo.dev/${domainMap[s]}?format=png&size=200`;
-  }
+  const domain = domainMap[s] || `${cleanTicker}.com`;
 
-  // Try using the ticker.com as a guess for Logo.dev
-  let res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
-
-  // 2. Official Website via Clearbit
+  // 2. Clearbit (Primary - Reliable & Free for top domains)
   if (website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     if (d && d.includes('.')) {
@@ -159,22 +153,8 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
     }
   }
 
-  // 3. Clearbit fallback
-  if (!res) {
-    res = `https://logo.clearbit.com/${cleanTicker}.com`;
-  }
-
-  // 4. GitHub HQ Stocks (US) - LAST RESORT (Simple icons)
-  if (!res && !s.includes('.') && !s.includes(':')) {
-    res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
-  }
-
-  // 5. Emergency Fallback
-  if (!res) {
-    res = `https://icons.duckduckgo.com/ip3/${cleanTicker}.com.ico`;
-  }
-
-  return res;
+  // Default to Clearbit with our calculated domain
+  return `https://logo.clearbit.com/${domain}`;
 };
 
 // --- MOCK DATA ---
