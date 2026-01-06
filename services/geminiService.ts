@@ -130,29 +130,37 @@ const ALLOWED_COMPANIES = [
 // Logo fetching function (no caching)
 export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
-  const cleanTicker = s.split('.')[0].toLowerCase();
+  const cleanTicker = s.split('.')[0];
 
-  // 1. GitHub HQ Stocks (US Tickers - High Quality Color PNGs)
-  // This is the most reliable source for AAPL, GOOG, MSFT, AMZN, etc.
-  if (!s.includes('.') && !s.includes(':')) {
-    return `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
-  }
-
-  // 2. Precision Domain Map for Logo.dev (If it's available)
-  const domainMap: Record<string, string> = {
-    "JNJ": "jnj.com",
-    "MC.PA": "lvmh.com",
-    "SAN.MC": "santander.com",
-    "BBVA.MC": "bbva.com",
-    "ITX.MC": "inditex.com"
+  // 1. TradingView High-Quality Logos (BEST LOOKING - COLOR)
+  // These are the logos used by professional traders
+  const tradingViewNames: Record<string, string> = {
+    "AAPL": "apple",
+    "GOOG": "google",
+    "GOOGL": "google",
+    "MSFT": "microsoft",
+    "AMZN": "amazon",
+    "TSLA": "tesla",
+    "META": "meta",
+    "NVDA": "nvidia",
+    "NFLX": "netflix",
+    "JNJ": "johnson-and-johnson",
+    "V": "visa",
+    "MA": "mastercard",
+    "JPM": "jpmorgan-chase"
   };
 
-  if (domainMap[s]) {
-    return `https://img.logo.dev/${domainMap[s]}?format=png&size=200`;
+  if (tradingViewNames[s]) {
+    return `https://s3-symbol-logo.tradingview.com/${tradingViewNames[s]}--big.svg`;
   }
 
-  // 3. Ultimate Fallback: Google Logo Service (Very reliable, follows redirects)
-  const domain = website ? website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : `${cleanTicker}.com`;
+  // 2. Generic TradingView (for other tickers)
+  if (!s.includes('.') && !s.includes(':')) {
+    return `https://s3-symbol-logo.tradingview.com/${cleanTicker.toLowerCase()}--big.svg`;
+  }
+
+  // 3. Fallback: Google Favicon (THE ULTIMATE FALLBACK)
+  const domain = website ? website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : `${cleanTicker.toLowerCase()}.com`;
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 };
 
