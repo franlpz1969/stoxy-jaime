@@ -132,29 +132,28 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
   const cleanTicker = s.split('.')[0].toLowerCase();
 
-  // 1. Precision Domain Map (The most reliable way)
-  const domainMap: Record<string, string> = {
-    "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
-    "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
-    "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
-    "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
-    "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
-    "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com",
-    "JNJ": "jnj.com", "V": "visa.com", "MA": "mastercard.com", "PYPL": "paypal.com"
-  };
-
-  const domain = domainMap[s] || `${cleanTicker}.com`;
-
-  // 2. Clearbit (Primary - Reliable & Free for top domains)
-  if (website) {
-    const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-    if (d && d.includes('.')) {
-      return `https://logo.clearbit.com/${d}`;
-    }
+  // 1. GitHub HQ Stocks (US Tickers - High Quality Color PNGs)
+  // This is the most reliable source for AAPL, GOOG, MSFT, AMZN, etc.
+  if (!s.includes('.') && !s.includes(':')) {
+    return `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // Default to Clearbit with our calculated domain
-  return `https://logo.clearbit.com/${domain}`;
+  // 2. Precision Domain Map for Logo.dev (If it's available)
+  const domainMap: Record<string, string> = {
+    "JNJ": "jnj.com",
+    "MC.PA": "lvmh.com",
+    "SAN.MC": "santander.com",
+    "BBVA.MC": "bbva.com",
+    "ITX.MC": "inditex.com"
+  };
+
+  if (domainMap[s]) {
+    return `https://img.logo.dev/${domainMap[s]}?format=png&size=200`;
+  }
+
+  // 3. Ultimate Fallback: Google Logo Service (Very reliable, follows redirects)
+  const domain = website ? website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : `${cleanTicker}.com`;
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 };
 
 // --- MOCK DATA ---
