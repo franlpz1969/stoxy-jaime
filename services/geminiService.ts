@@ -286,22 +286,28 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
 
   let res = "";
 
-  // 3. Official Website (High Precision)
+  // 3. Official Website (High Precision) - Try Logo.dev first
   if (website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-    if (d && d.includes('.')) res = `https://logo.clearbit.com/${d}`;
+    if (d && d.includes('.')) {
+      res = `https://img.logo.dev/${d}?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
+    }
   }
 
-  // 4. Precision Domain Map
+  // 4. Precision Domain Map with Logo.dev
   if (!res) {
     const domainMap: Record<string, string> = {
       "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
       "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
       "GOOG": "google.com", "GOOGL": "google.com", "AAPL": "apple.com", "META": "meta.com",
-      "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com"
+      "SAN": "santander.com", "BBVA": "bbva.com", "TEF": "telefonica.com", "ITX": "inditex.com",
+      "MSFT": "microsoft.com", "AMZN": "amazon.com", "TSLA": "tesla.com", "NVDA": "nvidia.com",
+      "AMD": "amd.com", "NFLX": "netflix.com", "ABNB": "airbnb.com", "ADBE": "adobe.com"
     };
     const cleanS = s.split('.')[0];
-    if (domainMap[cleanS]) res = `https://logo.clearbit.com/${domainMap[cleanS]}`;
+    if (domainMap[cleanS]) {
+      res = `https://img.logo.dev/${domainMap[cleanS]}?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
+    }
   }
 
   // 5. GitHub HQ Stocks (US)
@@ -309,13 +315,19 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
     res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // 6. Generic Fallback (Logo.dev style)
+  // 6. Logo.dev generic fallback (best for most companies)
+  if (!res) {
+    const cleanTicker = s.split('.')[0].toLowerCase();
+    res = `https://img.logo.dev/${cleanTicker}.com?token=pk_X-1ZBvIZSdGEfcIrLJSRHA&format=png&size=200`;
+  }
+
+  // 7. Clearbit fallback
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://logo.clearbit.com/${cleanTicker}.com`;
   }
 
-  // 7. Emergency Fallback (DuckDuckGo icons - very reliable)
+  // 8. Emergency Fallback (DuckDuckGo icons - very reliable)
   if (!res) {
     res = `https://icons.duckduckgo.com/ip3/${s.toLowerCase()}.com.ico`;
   }
