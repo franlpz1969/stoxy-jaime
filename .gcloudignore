@@ -1,22 +1,22 @@
 # gcloudignore
-# Copied from .gitignore but MODIFIED to allow .env.local
+# Explicitly ALLOW index.html and src
+!index.html
+!src/
+!components/
+!server/
+!services/
 
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Ignore big stuff
+node_modules/
+dist/
+dist-ssr/
+.git/
+.DS_Store
 
-node_modules
-dist
-dist-ssr
-# *.local <-- REMOVED this to allow .env.local
+# Ignore database
 data/*.sqlite
 
-# Additional gcloud specific
-.git
-.gitignore
-# Dockerfile <-- REMOVED from ignore
+# Logs
+logs/
+*.log
+
