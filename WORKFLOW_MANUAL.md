@@ -1,134 +1,65 @@
 # Manual de Desarrollo y Despliegue - Stoxy
 
-Este documento describe el flujo de trabajo estándar para desarrollar, probar y desplegar cambios en la aplicación **Stoxy**.
+Este documento describe el flujo de trabajo actual para **Stoxy**, simplificado para ejecución directa en VM sin Docker.
 
 ---
 
-## 🏗️ Flujo de Trabajo (Workflow)
+## 🏗️ Ciclo de Desarrollo
 
-El ciclo de vida del desarrollo sigue el estándar **Git Flow simplificado** + **CI/CD manual** hacia Google Cloud.
-
-1.  **Desarrollo (`development`)**: Todos los cambios nuevos se hacen aquí.
-2.  **Producción (`main`)**: Rama estable. Solo se actualiza cuando los cambios en `development` están probados.
-3.  **Despliegue (Google Cloud)**: Se realiza desde `main` usando Cloud Run.
+1.  **Local**: Probar cambios usando `./start-local.sh`.
+2.  **Git**: Confirmar cambios en la rama `main`.
+3.  **VM**: Desplegar los cambios en el servidor Google Cloud.
 
 ---
 
-## 1️⃣ Fase de Desarrollo (Local)
+## 1️⃣ Desarrollo Local
 
-Siempre trabaja en la rama `development`. Nunca hagas cambios directos en `main`.
-
-### 1.1 Crear o cambiar a la rama de desarrollo
+Para iniciar el entorno completo (Frontend + Backend):
 ```bash
-# Cambiar a la rama de desarrollo
-git checkout development
-
-# O crearla si no existe
-git checkout -b development
-```
-
-### 1.2 Programar y Probar
-Realiza tus cambios en el código. Para probar localmente:
-```bash
-# Iniciar servidor de desarrollo (Frontend + Backend)
 ./start-local.sh
 ```
-*   Accede a la app en: `http://localhost:5001`
-*   Verifica que todo funcione correctamente.
+*   **Frontend**: `http://localhost:3000` (Vite dev server)
+*   **Backend**: `http://localhost:3001` (Node API)
 
-### 1.3 Guardar cambios (Commit)
-Cuando termines una funcionalidad o arreglo:
+### Logos
+La aplicación utiliza una política de **Google Favicon** para garantizar que todos los logos de empresas se cargan correctamente y con el icono oficial de su sitio web.
+
+---
+
+## 2️⃣ Despliegue
+
+El despliegue se realiza directamente en la VM de Google Cloud (`stoxy-vm`). Hemos eliminado Docker para ganar velocidad y simplicidad.
+
+### 2.1 Método Automático
+Usa el script proporcionado para automatizar todo el proceso:
 ```bash
-git add .
-git commit -m "Descripción clara de los cambios (ej: Fix login error)"
+./deploy_manual.sh
+```
+
+### 2.2 Método Manual (en la VM)
+Si prefieres hacerlo paso a paso dentro de la VM:
+```bash
+cd ~/stoxy-jaime
+git pull
+npm install
+npm run build
+pm2 restart stoxy-app
 ```
 
 ---
 
-## 2️⃣ Fase de Fusión (Merge a Main)
+## 🧹 Limpieza de Proyecto
 
-Una vez que los cambios en `development` están probados y listos para producción.
-
-### 2.1 Actualizar Main
-```bash
-# 1. Moverse a main
-git checkout main
-
-# 2. Fusionar los cambios de development
-git merge development
-```
-
-### 2.2 Subir al repositorio (Opcional si usas GitHub/GitLab)
-```bash
-git push origin main
-```
-
-*Nota: Después del merge, puedes volver a `git checkout development` para seguir trabajando en nuevas cosas.*
+Se han eliminado los siguientes componentes obsoletos:
+*   **Archivos Docker**: No se usan imágenes, se ejecuta Node directo.
+*   **Cloud Run / Cloud Build**: El despliegue es en VM.
+*   **Scripts Legacy**: Eliminados scripts de prueba (`testPrompt.js`, `listModels.js`).
 
 ---
 
-## 3️⃣ Fase de Despliegue (Google Cloud)
+## ⚙️ Configuración del Servidor (PM2)
 
-Desplegamos la versión estable de `main` en la infraestructura de Google Cloud Run.
-
-### 3.1 Ejecutar Script de Despliegue
-Asegúrate de estar en la raíz del proyecto y tener configurada tu cuenta de Google Cloud (`gcloud auth login`).
-
-```bash
-# Ejecutar el script automático
-./deploy.sh
-```
-
-### ¿Qué hace este script?
-1.  **Build**: Construye una nueva imagen Docker de la aplicación.
-2.  **Push**: Sube la imagen al Google Artifact Registry.
-3.  **Deploy**: Actualiza el servicio `stocktracker-pro` en Cloud Run.
-
-## 3️⃣ Fase de Despliegue (Google VM)
-
-Desplegamos la versión estable de `main` en tu servidor dedicado `stoxy-vm`.
-
-### 3.1 Ejecutar Script de Despliegue
-```bash
-./deploy.sh
-```
-
-### ¿Qué hace este script?
-1.  **Conecta**: Entra por SSH a tu servidor.
-2.  **Baja**: Descarga la última versión de tu app (Docker).
-3.  **Persiste**: Asegura que la base de datos no se borre.
-4.  **Lanza**: Reinicia el servicio en el puerto 80.
-
-### 3.2 Verificar
-Al finalizar, el script te dará la IP. Entra en `http://34.63.115.127`
-
----
-
-## 4️⃣ Setup Inicial (Solo si cambias de servidor)
-
-Si borras la VM y creas una nueva, necesitarás preparar el entorno una única vez:
-```bash
-./setup_vm.sh
-```
-*(Esto instala Docker y configura permisos)*
-
----
-
-##  RESUMEN RÁPIDO
-
-```bash
-# 1. PROGRAMAR
-git checkout development
-# ...hacer cambios...
-./start-local.sh  # Probar
-
-# 2. GUARDAR Y FUSIONAR
-git add .
-git commit -m "Mejoras listas"
-git checkout main
-git merge development
-git push origin main
-
-# 3. DESPLEGAR
-./deploy.sh
-```
+La aplicación es gestionada por PM2. Comandos útiles:
+*   `pm2 status`: Ver estado de la app.
+*   `pm2 restart stoxy-app`: Reiniciar.
+*   `pm2 logs stoxy-app`: Ver logs en tiempo real.
