@@ -11,6 +11,7 @@ import ChartsView from './components/ChartsView';
 import LandingView from './components/LandingView';
 import StockDetailView from './components/StockDetailView';
 import PortfolioAnalysisModal from './components/PortfolioAnalysisModal';
+import LogoTestView from './components/LogoTestView';
 import { AuthProvider, useAuth } from './components/AuthContext';
 import { fetchStockData, fetchStockPrice, analyzePortfolioData } from './services/geminiService';
 import { PortfolioPosition, StockSearchInputs, Transaction, TransactionType, StockData, Portfolio } from './types';
@@ -27,7 +28,7 @@ if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
 }
 
 
-type Tab = 'portfolio' | 'markets' | 'calendar' | 'news' | 'charts';
+type Tab = 'portfolio' | 'markets' | 'calendar' | 'news' | 'charts' | 'test';
 
 const EXCHANGE_RATES: Record<string, number> = {
   'USD': 1.0,
@@ -40,7 +41,7 @@ const EXCHANGE_RATES: Record<string, number> = {
 
 function AppContent() {
   const { getAuthHeaders, isAuthenticated, isLoading: authLoading, user: authUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('portfolio');
+  const [activeTab, setActiveTab] = useState<Tab>('test');
   const [language, setLanguage] = useState('en');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     // Initialize from localStorage or default to dark
@@ -551,6 +552,7 @@ function AppContent() {
         {activeTab === 'calendar' && <CalendarView portfolio={activePortfolio?.positions || []} />}
         {activeTab === 'news' && <NewsView />}
         {activeTab === 'charts' && <ChartsView portfolio={activePortfolio?.positions || []} />}
+        {activeTab === 'test' && <LogoTestView />}
       </main>
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-gray-200 dark:border-zinc-800/50 pb-safe pt-2 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         <div className="max-w-lg mx-auto flex justify-around items-end pb-2">
