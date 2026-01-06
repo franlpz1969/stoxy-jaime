@@ -244,7 +244,7 @@ export const COMPANY_LOGOS: Record<string, string> = {
 };
 
 // Global Cache Helper (Memory + LocalStorage)
-const CACHE_KEY = 'stoxy_logo_cache_v5';
+const CACHE_KEY = 'stoxy_logo_cache_v6';
 
 const getCachedLogo = (symbol: string): string | null => {
   if (typeof window === 'undefined') return null;
