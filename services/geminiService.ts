@@ -243,50 +243,13 @@ export const COMPANY_LOGOS: Record<string, string> = {
   "AZN": "https://logo.clearbit.com/astrazeneca.com",
 };
 
-// Global Cache Helper (Memory + LocalStorage)
-const CACHE_KEY = 'stoxy_logo_cache_v8';
-
-const getCachedLogo = (symbol: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const cache = localStorage.getItem(CACHE_KEY);
-    if (cache) {
-      const parsed = JSON.parse(cache);
-      return parsed[symbol] || null;
-    }
-  } catch (e) { return null; }
-  return null;
-};
-
-const saveLogoToCache = (symbol: string, url: string) => {
-  if (typeof window === 'undefined') return;
-  try {
-    const cache = localStorage.getItem(CACHE_KEY);
-    const parsed = cache ? JSON.parse(cache) : {};
-    parsed[symbol] = url;
-    localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
-  } catch (e) { }
-};
-
-// Memory Cache for current instance
-const memoLogoCache: Record<string, string> = { ...COMPANY_LOGOS };
-
+// Logo fetching function (no caching)
 export const getCompanyLogo = (symbol: string, website?: string): string => {
   const s = symbol.toUpperCase();
 
-  // 1. Memory Check
-  if (memoLogoCache[s]) return memoLogoCache[s];
-
-  // 2. Storage Check
-  const cached = getCachedLogo(s);
-  if (cached) {
-    memoLogoCache[s] = cached;
-    return cached;
-  }
-
   let res = "";
 
-  // 3. Precision Domain Map (HIGHEST PRIORITY for known companies)
+  // 1. Precision Domain Map (HIGHEST PRIORITY for known companies)
   const domainMap: Record<string, string> = {
     "JPM": "jpmorganchase.com", "BAC": "bankofamerica.com", "WFC": "wellsfargo.com",
     "WMT": "walmart.com", "KO": "cocacola.com", "PEP": "pepsico.com", "DIS": "disney.com",
@@ -300,7 +263,7 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
     res = `https://logo.clearbit.com/${domainMap[cleanS]}`;
   }
 
-  // 4. Official Website (if provided)
+  // 2. Official Website (if provided)
   if (!res && website) {
     const d = website.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     if (d && d.includes('.')) {
@@ -308,30 +271,28 @@ export const getCompanyLogo = (symbol: string, website?: string): string => {
     }
   }
 
-  // 5. GitHub HQ Stocks (US) - Only for stocks NOT in domain map
+  // 3. GitHub HQ Stocks (US) - Only for stocks NOT in domain map
   if (!res && !s.includes('.') && !s.includes(':')) {
     res = `https://raw.githubusercontent.com/nvstly/icons/main/stocks/${s}.png`;
   }
 
-  // 6. Clearbit generic fallback
+  // 4. Clearbit generic fallback
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://logo.clearbit.com/${cleanTicker}.com`;
   }
 
-  // 7. Logo.dev fallback
+  // 5. Logo.dev fallback
   if (!res) {
     const cleanTicker = s.split('.')[0].toLowerCase();
     res = `https://img.logo.dev/${cleanTicker}.com?format=png&size=200`;
   }
 
-  // 8. Emergency Fallback (DuckDuckGo icons)
+  // 6. Emergency Fallback (DuckDuckGo icons)
   if (!res) {
     res = `https://icons.duckduckgo.com/ip3/${s.toLowerCase()}.com.ico`;
   }
 
-  memoLogoCache[s] = res;
-  saveLogoToCache(s, res);
   return res;
 };
 
